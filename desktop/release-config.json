@@ -1,0 +1,14 @@
+{
+  "production": false,
+  "channel": "stable",
+  "releaseEpoch": 2,
+  "teamId": "",
+  "appUpdateURL": "https://qx04222.github.io/dog-squad/updates/app.json",
+  "contentFeedURL": "https://qx04222.github.io/dog-squad/updates/content.json",
+  "appPublicKeys": {
+    "app-publisher-2026": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEANb0P3pevfgTUUlu1hYbST/7/s/T+TKy5v7HEN3UsJ2I=\n-----END PUBLIC KEY-----\n"
+  },
+  "contentPublicKeys": {
+    "publisher-2026": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAkT+Yi8ho3WgX0Eqz5CXrYyCu38RYF5TxehE1PKh4viQ=\n-----END PUBLIC KEY-----\n"
+  }
+}

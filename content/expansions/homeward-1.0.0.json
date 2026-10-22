@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "id": "homeward",
+  "version": "1.0.0",
+  "minAppVersion": "4.0.0",
+  "title": "回家之前",
+  "description": "两关城市夜巡番外。明日航线开通一周后，Ramen 和 Bing Bong 帮最后一班下班的人接上回家路，也为自己找回一个安静的夜晚。",
+  "acts": [
+    {
+      "id": "after-hours",
+      "title": "番外 · 回家之前",
+      "subtitle": "AFTER HOURS / 夜巡小记",
+      "synopsis": "城市已经恢复日常，小麻烦依然会在夜里冒出来。一班晚点的列车、一条反复亮起的小巷，让两只在收工前多走了一段路。"
+    }
+  ],
+  "levels": [
+    {
+      "id": "homeward-01",
+      "act": "after-hours",
+      "name": "末班灯火",
+      "en": "THE LAST ARRIVAL",
+      "subtitle": "有人刚结束一天，我们还不能先关灯。",
+      "color": "#f3ca88",
+      "sea": "#637f95",
+      "road": "#a1b3c4",
+      "boss": "站台分流器",
+      "bossKind": "shooter",
+      "tag": "夜巡",
+      "difficulty": 4,
+      "duration": 80,
+      "speed": 132,
+      "bossHp": 10600,
+      "star2": 104,
+      "star3": 210,
+      "comboGoal": 26,
+      "damageGoal": 50,
+      "killGoal": 72,
+      "mechanic": "standard",
+      "mechanicLabel": "标准行动",
+      "mechanicHint": "观察弹幕与预警，合理分配脉冲、冲刺和伙伴支援。",
+      "intro": "Bing Bong：末班车刚进站，清场机却提前开工了。先给乘客让出路。",
+      "brief": "明日航线开通一周后，两只轮到城市夜巡。末班列车因检修晚到了十分钟，站台分流器仍按旧时刻表启动清场，把刚下班的乘客堵在出口内。Ramen 和 Bing Bong 原本已经往家走，听到呼叫，又折回了月台。",
+      "objective": "解除站台分流器的错误清场，让末班车乘客安全离站。",
+      "radio": "Ramen：修路的、做夜宵的、医院值班的……今天的最后一班，比想象中热闹。",
+      "outro": "清场机回到停靠位，站务员重新开放出口。一位夜班面包师送来两只纸袋，说前面的老巷还亮着灯，回家时可以顺路看看。",
+      "debrief": "面包袋还带着温度，Ramen 一路闻了三次，始终没拆。Bing Bong 数完最后几位离站的乘客，才想起自己也还没吃晚饭。灯下有人揉着眼睛道谢，有人急着赶路；普通的夜晚，原来也需要被接住。",
+      "dialogue": [
+        {
+          "speaker": "Ramen",
+          "text": "今晚没下雨，路也顺。我们应该能准时吃饭。"
+        },
+        {
+          "speaker": "站务员",
+          "text": "抱歉，末班车晚点，出口的清场机已经启动了。"
+        },
+        {
+          "speaker": "Bing Bong",
+          "text": "先把乘客留在安全线内。饭等一会儿，我们马上到。"
+        }
+      ],
+      "transmissions": [
+        {
+          "at": 0.22,
+          "speaker": "Bing Bong",
+          "text": "清场机只会照着预定路线走。看准弹道，别把退路交出去。"
+        },
+        {
+          "at": 0.52,
+          "speaker": "Ramen",
+          "text": "修路的、做夜宵的、医院值班的……今天的最后一班，比想象中热闹。"
+        },
+        {
+          "at": 0.78,
+          "speaker": "站务员",
+          "text": "手动出口已经有人接应。分流器一停，我就带大家出去。"
+        }
+      ],
+      "archive": {
+        "title": "最后一班车的纸袋",
+        "text": "面包袋上原本只印着营业时间，面包师在背面补了一句：晚到也给你们留一份。站务员把新的末班车时刻表贴在窗内，同时保留了值班电话。列车偶尔还会迟到，出口不必跟着失约。"
+      }
+    },
+    {
+      "id": "homeward-02",
+      "act": "after-hours",
+      "name": "归巷灯火",
+      "en": "ONE LIGHT LEFT ON",
+      "subtitle": "让想睡的人睡下，也让晚归的人看见路。",
+      "color": "#c1dcb9",
+      "sea": "#6b889b",
+      "road": "#adbdc8",
+      "boss": "灯带总管",
+      "bossKind": "repair",
+      "tag": "收工",
+      "difficulty": 5,
+      "duration": 85,
+      "speed": 137,
+      "bossHp": 11950,
+      "star2": 110,
+      "star3": 220,
+      "comboGoal": 28,
+      "damageGoal": 55,
+      "killGoal": 80,
+      "mechanic": "repairSwarm",
+      "mechanicLabel": "维修集群",
+      "mechanicHint": "额外维修单位加入机群，同时增加 2 个补给箱。优先切断维修链。",
+      "intro": "Ramen：维修机把关灯当成故障，刚灭又亮。先拆维修链，让街坊能睡。",
+      "brief": "老巷庆祝航线开通的灯带已经亮了一周。维修机把居民的关灯动作误当成断电故障，反复点亮整条街。沿途又有夜班乘客经过，不能简单切断所有照明。两只得先停下维修循环，把装饰灯与路灯分开控制。",
+      "objective": "停止灯带总管的维修循环，恢复装饰灯与夜间路灯的独立控制。",
+      "radio": "Bing Bong：窗边的灯可以熄，拐角的路灯留下。大家想要的其实并不冲突。",
+      "outro": "灯带逐段熄灭，转角留下柔和的路灯。晚归的人经过窗下，脚步放轻了些。两只终于坐在家门口，把纸袋里的面包分成两半。",
+      "debrief": "Ramen 发现自己分到的那半块更大，便悄悄把中间最软的一口推过去。Bing Bong 假装没看见。小巷安静下来，远处末班车的尾灯也消失了。今晚没有新的呼叫，它们把终端充上电，认真结束了这一天。",
+      "dialogue": [
+        {
+          "speaker": "Ramen",
+          "text": "这条巷子比白天还亮。庆祝活动还没结束吗？"
+        },
+        {
+          "speaker": "Bing Bong",
+          "text": "窗帘都拉上了。大概有人很想让它结束。"
+        },
+        {
+          "speaker": "Ramen",
+          "text": "懂了。先关掉会自己“修好”的开关，再回家开饭。"
+        }
+      ],
+      "transmissions": [
+        {
+          "at": 0.22,
+          "speaker": "Ramen",
+          "text": "小狐工匠在给彼此充电。难怪它们能一整夜不休息。"
+        },
+        {
+          "at": 0.52,
+          "speaker": "Bing Bong",
+          "text": "窗边的灯可以熄，拐角的路灯留下。大家想要的其实并不冲突。"
+        },
+        {
+          "at": 0.78,
+          "speaker": "Ramen",
+          "text": "居民已经标好了要保留的路灯。剩下这盏总管交给我们。"
+        }
+      ],
+      "archive": {
+        "title": "窗台上的小纸条",
+        "text": "第二天清晨，路灯旁多了一张纸条：“昨晚终于睡好了。谢谢，也请早点休息。”下面有人画了两只不太像的狗。Ramen 坚持说耳朵大的那个是 Bing Bong，Bing Bong 没有纠正它。"
+      }
+    }
+  ]
+}

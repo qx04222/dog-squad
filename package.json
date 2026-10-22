@@ -1,0 +1,36 @@
+{
+  "name": "dog-squad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dog Squad — a complete six-chapter pet sci-fi action adventure",
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "node scripts/check.cjs",
+    "start": "npm run build && install-electron && electron .",
+    "pack:mac": "node scripts/native-build.cjs",
+    "pack:mac:dir": "node scripts/native-build.cjs --dir",
+    "release:check": "node scripts/release-preflight.cjs",
+    "pack:sign": "node scripts/pack-sign.cjs",
+    "pack:web": "node scripts/package-web.cjs",
+    "build:site": "npm run build && node scripts/build-site.cjs"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.15.3"
+  },
+  "main": "desktop/main.cjs",
+  "author": "Dog Squad",
+  "license": "MIT",
+  "homepage": "https://qx04222.github.io/dog-squad/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qx04222/dog-squad.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qx04222/dog-squad/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

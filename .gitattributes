@@ -1,0 +1,9 @@
+* text=auto
+*.cjs text eol=lf
+*.js text eol=lf
+*.sh text eol=lf
+*.command text eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.icns binary
