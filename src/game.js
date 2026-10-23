@@ -50,6 +50,7 @@
   let pointerX = null;
   const keys = new Set();
   const sprite = new Image();
+  const portraitImage = new Image();let portraitReady=false;
   const pointerInput = window.MochiInput.createPointerInput();
   let spriteCache = [[], []];
   let artLoaded = false, enemyReady=false, bossReady=false, renderScale=1, updateHealthSent=false;
@@ -308,10 +309,17 @@
   }
   const audio = window.DogAudio.create({getPreferences:()=>save});
   function updatePortraits() {
+    function portrait(ctx,index,w,h,avatar=false){
+      ctx.clearRect(0,0,w,h);
+      if(!portraitReady){drawSprite(ctx,index,false,w/2,avatar?h*1.38:h*.95,avatar?h*1.36:h*.94);return;}
+      const sw=portraitImage.naturalWidth/2,sh=portraitImage.naturalHeight;
+      if(avatar){const crop=sw*.88;ctx.drawImage(portraitImage,index*sw+sw*.06,sh*.07,crop,crop,0,0,w,h);}
+      else {const scale=Math.min(w/sw,h/sh),dw=sw*scale,dh=sh*scale;ctx.drawImage(portraitImage,index*sw,0,sw,sh,(w-dw)/2,(h-dh)/2,dw,dh);}
+    }
     const c=$('hero-portrait'),dpr=Math.min(3,window.devicePixelRatio||1),pc=c.getContext('2d');
-    c.width=Math.round(480*dpr);c.height=Math.round(540*dpr);pc.setTransform(dpr,0,0,dpr,0,0);pc.imageSmoothingQuality='high';pc.clearRect(0,0,480,540);drawSprite(pc,hero,false,240,514,508);
+    c.width=Math.round(480*dpr);c.height=Math.round(540*dpr);pc.setTransform(dpr,0,0,dpr,0,0);pc.imageSmoothingQuality='high';portrait(pc,hero,480,540);
     c.setAttribute('aria-label',`${HEROES[hero].name}，${HEROES[hero].kind}行动队长`);
-    document.querySelectorAll('[data-avatar]').forEach(a=>{const ac=a.getContext('2d'),n=Number(a.dataset.avatar),w=Number(a.dataset.logicalWidth||a.width),h=Number(a.dataset.logicalHeight||a.height);a.dataset.logicalWidth=w;a.dataset.logicalHeight=h;a.width=Math.round(w*dpr);a.height=Math.round(h*dpr);ac.setTransform(dpr,0,0,dpr,0,0);ac.imageSmoothingQuality='high';drawSprite(ac,n,false,w/2,h*1.38,h*1.36);});
+    document.querySelectorAll('[data-avatar]').forEach(a=>{const ac=a.getContext('2d'),n=Number(a.dataset.avatar),w=Number(a.dataset.logicalWidth||a.width),h=Number(a.dataset.logicalHeight||a.height);a.dataset.logicalWidth=w;a.dataset.logicalHeight=h;a.width=Math.round(w*dpr);a.height=Math.round(h*dpr);ac.setTransform(dpr,0,0,dpr,0,0);ac.imageSmoothingQuality='high';portrait(ac,n,w,h,true);});
   }
   function updateMenu() {
     const starsForMode=save.easy?save.easyStars:save.stars, bestForMode=save.easy?save.easyBest:save.best;
@@ -342,7 +350,7 @@
     $('act-progress').textContent=`${actLevels.filter(completed).length} / ${actLevels.length} 行动完成`;
     $('campaign-progress').textContent=`${LEVELS.filter(completed).length} / ${LEVELS.length}`;
     document.querySelectorAll('[data-act]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.act===activeAct));const ls=LEVELS.filter(l=>actFor(l).key===b.dataset.act);b.querySelector('small').textContent=`${ls.filter(completed).length}/${ls.length}`;});
-    $('start-btn').firstChild.textContent=completed(LEVELS[level])?'重玩行动':LEVELS.some(completed)?'继续行动':'查看行动简报';
+    $('start-btn').firstChild.textContent=completed(LEVELS[level])?'再玩一次':LEVELS.some(completed)?'继续冒险':'出发！';
     $('current-chapter-name').textContent=actFor(LEVELS[level]).title;
     $('current-operation-name').textContent=`${String(level+1).padStart(2,'0')} · ${LEVELS[level].name}`;
     $('current-operation-meta').textContent=`${actLevels.filter(completed).length} / ${actLevels.length} 行动完成 · ${save.easy?'辅助':'标准'}模式`;
@@ -356,21 +364,12 @@
     const s=game?.state||{level,maxCombo:0,damageTaken:0,kills:0};
     $('mission-list').innerHTML=missionResults(s).map((m,i)=>`<div class="mission-row ${game&&m.met?'met':''}"><span>${m.label}</span><b>${game?m.value+' / ':''}${i===1?'≤':'≥'}${m.target}</b></div>`).join('');
   }
-  let storyContinuation = null;
-  function storyScene(request, continuation, seenKey) {
-    if (!Story) { continuation?.(); return; }
-    storyContinuation = () => { if (seenKey && !save.storySeen.includes(seenKey)) { save.storySeen.push(seenKey); persist(); } continuation?.(); };
-    Story.open({...request,guided:true});
-  }
-  function brief(){
-    if (Story && !save.storySeen.includes('prologue')) return storyScene({type:'prologue'}, brief, 'prologue');
-    const chapter = actFor(LEVELS[level]), key = 'chapter:'+chapter.id+':opening';
-    if (Story && chapter.packId===window.DogBuiltin.id && window.DogStory?.getChapter(chapter.id) && !save.storySeen.includes(key)) return storyScene({type:'chapter',actId:chapter.id,phase:'opening'}, brief, key);
-    const c=LEVELS[level];$('brief-kicker').textContent=`OPERATION ${String(level+1).padStart(2,'0')} / ${c.en}`;$('brief-title').textContent=c.name;
-    $('brief-conversation').innerHTML=c.dialogue.map(d=>`<p><b>${escapeHTML(d.speaker)}</b><span>${escapeHTML(d.text)}</span></p>`).join('');
-    $('brief-mechanic').textContent=c.mechanicLabel; $('brief-mechanic-hint').textContent=c.mechanicHint;
-    $('brief-story').textContent=c.brief;$('brief-objective').textContent=c.objective;$('brief-team').textContent=`${HEROES[hero].name} 带队 / ${HEROES[1-hero].name} 支援`;
-    $('brief-loadout').textContent=`${save.easy?'辅助':'标准'}行动 · ${LOADOUTS[save.loadout].name}`;$('brief-dialog').showModal();
+  const VISUAL_INTRO_KEY = 'visual-intro-v1';
+  function brief() {
+    if (save.storySeen.includes(VISUAL_INTRO_KEY)) { start(); return; }
+    $('brief-kicker').textContent = 'Ramen + Bing Bong';
+    $('brief-title').textContent = '一起，把大家带回家';
+    $('brief-dialog').showModal();
   }
   function setNativeBattle(active) {
     const request=nativeBattleQueue.then(()=>window.dogDesktop?.setBattleActive(active));
@@ -413,18 +412,18 @@
     if (resultShown || !game) return; resultShown = true;$('skip-celebration').hidden=true;
     const s = game.state;if(s.phase==='won'&&(instant||reducedMotion))victoryStarted=ambient-Motion.ARCHIVE_SETTLE_TIME;hideToast(); $('play-bottom').hidden = true; $('result-overlay').hidden = false; $('boss-hud').hidden = true; $('game-frame').classList.remove('playing');
     const won = s.phase === 'won';
-    $('result-kicker').textContent = won ? 'MISSION COMPLETE / 行动评级' : 'MISSION FAILED / 行动复盘';
-    $('result-title').textContent = won ? (LEVELS[level].id==='daybreak-48' ? '星海远征 · 每一盏灯都等你回家' : '行动完成 · 新档案已归档') : '行动中断，重新部署';
+    $('result-kicker').textContent = won ? '抵达！' : '再挑战';
+    $('result-title').textContent = won ? (LEVELS[level].id==='daybreak-48' ? '我们到家啦！' : '好样的，搭档！') : '再来一次吧';
     $('result-description').textContent=won?`${'★'.repeat(s.stars)}${'☆'.repeat(3-s.stars)} · 完成 ${s.medals} / 3 项战术挑战`:'优先躲开锁定预警，保留一次冲刺；尝试防卫装甲或搭档支援。';
     $('result-stars').textContent=won?s.rank:'×';
     $('result-objectives').innerHTML=missionResults(s).map((m,i)=>`<div class="mission-row ${won&&m.met?'met':''}"><span>${won&&m.met?'✓':'—'} ${m.label}</span><b>${m.value} / ${i===1?'≤':'≥'}${m.target}</b></div>`).join('');
-    $('result-story').textContent=won?LEVELS[level].outro:'行动数据已保留在本次复盘。调整装备与技能时机后再次挑战。';
+    $('result-story').textContent='';$('result-story').hidden=true;
     $('result-team').textContent = s.team; $('result-kills').textContent = s.kills; $('result-score').textContent = s.score.toLocaleString();
-    $('result-next').firstChild.textContent = won ? (level < LEVELS.length-1 ? '下一关简报' : '返回行动地图') : '重新部署';
+    $('result-next').firstChild.textContent = won ? (level < LEVELS.length-1 ? '下一站' : '回到地图') : '再来一次';
     $('result-retry').hidden = !won;
 
-    const earned=captainProfile().points-pointsBefore;$('result-growth').hidden=false;$('result-growth').textContent=won?(earned>0?`队长训练点 +${earned} · 回到地图分配新能力`:`训练点 ${captainProfile().points} · 队长成长中可免费调整路线`):'自由调整装备与战术模块，再来一次。';
-    Expedition.renderDebrief({won,stars:s.stars,rank:s.rank,archiveTitle:LEVELS[level].archive.title,archiveText:LEVELS[level].archive.text+'\n\n'+LEVELS[level].debrief,instant:instant||reducedMotion});
+    $('result-growth').hidden=true;$('result-growth').textContent='';
+    Expedition.renderDebrief({won,stars:s.stars,rank:s.rank,instant:instant||reducedMotion});
     updateMenu();document.querySelector('#result-overlay .result-card').focus({preventScroll:true});
   }
   function updateHud() {
@@ -518,19 +517,18 @@
     if(!game)return;const axis=(keys.has('ArrowRight')||keys.has('d')||keys.has('D')?1:0)-(keys.has('ArrowLeft')||keys.has('a')||keys.has('A')?1:0);
     if(game.dash(direction||axis)){pointerX=game.state.x;pointerInput.reanchor(game.state.x);}
   }
+  $('lobby-map-link').addEventListener('click',()=> $('campaign-btn').click());
   $('start-btn').addEventListener('click', brief);
   $('close-brief').addEventListener('click',()=>$('brief-dialog').close());
-  $('deploy-btn').addEventListener('click',()=>{$('brief-dialog').close();start();});
+  $('deploy-btn').addEventListener('click',()=>{if(!save.storySeen.includes(VISUAL_INTRO_KEY)){save.storySeen.push(VISUAL_INTRO_KEY);persist();}$('brief-dialog').close();start();});
   $('support-btn').addEventListener('click',()=>game?.requestSupport());$('dash-left').addEventListener('click',()=>doDash(-1));$('dash-right').addEventListener('click',()=>doDash(1));
+  document.querySelectorAll('.more-menu button').forEach(button=>button.addEventListener('click',()=>button.closest('details').open=false));
   document.querySelectorAll('[data-loadout]').forEach(b=>b.addEventListener('click',()=>{if(game)return;save.loadout=Number(b.dataset.loadout);persist();updateMenu();})); $('pause-btn').addEventListener('click', () => pause()); $('resume-btn').addEventListener('click', resume);
   $('pause-restart').addEventListener('click', start); $('pause-home').addEventListener('click', homeToMap); $('result-home').addEventListener('click', homeToMap); $('result-retry').addEventListener('click', start);
   $('result-next').addEventListener('click', () => {
     if (!game?.state.won) { start(); return; }
-    const finished=LEVELS[level], chapter=actFor(finished), next=LEVELS[level+1];
-    const proceed=()=>{if(next){level++;home();brief();}else homeToMap();};
-    const finish=()=>{if(finished.id==='daybreak-48'&&!save.storySeen.includes('epilogue'))storyScene({type:'epilogue'},proceed,'epilogue');else proceed();};
-    if(chapter.packId===window.DogBuiltin.id&&window.DogStory?.getChapter(chapter.id)&&!save.storySeen.includes('chapter:'+chapter.id+':ending')&&(!next||actFor(next)?.key!==chapter.key))storyScene({type:'chapter',actId:chapter.id,phase:'ending'},finish,'chapter:'+chapter.id+':ending');
-    else finish();
+    if (level + 1 < LEVELS.length) { level++; home(); start(); }
+    else homeToMap();
   });
   $('skill-btn').addEventListener('click', () => game?.requestSkill());
   $('tactical-btn').addEventListener('click',()=>game?.requestTactical());$('ultimate-btn').addEventListener('click',()=>game?.requestUltimate());
@@ -617,9 +615,9 @@
   function renderLibrary(){
     const installed=desktopState?.content?.packs||contentPacks.slice(1).map(p=>({id:p.id,title:p.title,version:p.version,levelCount:p.levels.length}));
     $('installed-packs').innerHTML=`<article class="pack-card"><span class="micro">BASE GAME / 本体</span><h3>星海远征</h3><p>${window.DogBuiltin.acts.map(a=>escapeHTML(a.title)).join(' → ')}</p><strong>${window.DogBuiltin.levels.length} 关 · ${window.DogBuiltin.acts.length} 章完整故事</strong><small>v${window.Mochi.APP_VERSION} · 已安装 · 离线可用</small></article>`+installed.map(p=>`<article class="pack-card"><span class="micro">CHAPTER PACK / 扩展章节</span><h3>${escapeHTML(p.title||p.id)}</h3><p>${p.levelCount||p.levels?.length||'新增'} 个行动</p><small>v${escapeHTML(p.version)} · 已安装 · 离线可用</small></article>`).join('');
-    if(!window.dogDesktop){$('app-update-status').textContent='网页版 v1.0.0 · 在线版刷新更新；离线版下载新版 HTML';$('content-update-status').textContent='Mac 版支持独立章节下载与关卡包导入。网页版包含全部 48 关本体。';for(const id of ['auto-update','check-updates','import-pack','open-update-inbox'])$(id).disabled=true;return;}
+    if(!window.dogDesktop){$('app-update-status').textContent='网页版 v1.1.0 · 在线版刷新更新；离线版下载新版 HTML';$('content-update-status').textContent='Mac 版支持独立章节下载与关卡包导入。网页版包含全部 48 关本体。';for(const id of ['auto-update','check-updates','import-pack','open-update-inbox'])$(id).disabled=true;return;}
     const a=desktopState?.app,c=desktopState?.content;
-    $('app-update-status').textContent=a?`v${a.version||'1.0.0'} · ${phases[a.phase]||a.phase||'准备就绪'}${a.availableVersion?' / 新版本 '+a.availableVersion:''}${a.reason?'。'+a.reason:''}${a.phase==='downloading'&&Number.isFinite(a.progress)?' '+Math.round(a.progress)+'%':''}`:'正在读取应用状态…';
+    $('app-update-status').textContent=a?`v${a.version||'1.1.0'} · ${phases[a.phase]||a.phase||'准备就绪'}${a.availableVersion?' / 新版本 '+a.availableVersion:''}${a.reason?'。'+a.reason:''}${a.phase==='downloading'&&Number.isFinite(a.progress)?' '+Math.round(a.progress)+'%':''}`:'正在读取应用状态…';
     $('content-update-status').textContent=c?`${c.error||c.localInbox?.message||c.reason||'已安装章节可离线游玩'}${c.lastCheck?' · 上次检查 '+new Date(c.lastCheck).toLocaleString():''}`:'正在读取关卡库…';
     $('auto-update').checked=desktopState?.preferences?.automaticUpdates!==false;
     $('auto-update').disabled=false;$('open-update-inbox').disabled=false;$('check-updates').disabled=false;$('import-pack').disabled=!!isActiveBattle()||!c?.enabled;
@@ -639,8 +637,9 @@
   $('auto-update').addEventListener('change',()=>desktopTask(()=>window.dogDesktop.setPreferences({automaticUpdates:$('auto-update').checked}),'更新偏好已保存。'));
   if(window.dogDesktop){window.dogDesktop.onState(s=>{desktopState=s;renderLibrary();});window.dogDesktop.getState().then(s=>{desktopState=s;renderLibrary();}).catch(()=>{});}
   sprite.src = window.MOCHI_SPRITES;
+  portraitImage.onload=()=>{portraitReady=true;updatePortraits();};portraitImage.src=window.DOG_HERO_PORTRAITS;
   updateSoundButton(); updateMenu();persist();
-  Story?.init({canRead:request=>{if(request.type==='epilogue')return save.storySeen.includes('epilogue')||['normal','assist'].some(mode=>save.records['daybreak-48']?.[mode]?.stars>0);if(request.type==='chapter'&&request.phase==='ending'){const key='chapter:'+request.actId+':ending',last=window.DogBuiltin.levels.filter(l=>l.act===request.actId).at(-1);return save.storySeen.includes(key)||!!last&&['normal','assist'].some(mode=>save.records[last.id]?.[mode]?.stars>0);}return true;},onClose:()=>{const next=storyContinuation;storyContinuation=null;next?.();}});
+  Story?.init({canRead:request=>{if(request.type==='epilogue')return save.storySeen.includes('epilogue')||['normal','assist'].some(mode=>save.records['daybreak-48']?.[mode]?.stars>0);if(request.type==='chapter'&&request.phase==='ending'){const key='chapter:'+request.actId+':ending',last=window.DogBuiltin.levels.filter(l=>l.act===request.actId).at(-1);return save.storySeen.includes(key)||!!last&&['normal','assist'].some(mode=>save.records[last.id]?.[mode]?.stars>0);}return true;},onClose:()=>{}});
   if(startupWarnings.length)toast(startupWarnings.join(' '),10000);
   if (!storageWorks) $('save-note').textContent = '浏览器未允许保存，仍可正常游玩';
   if (matchMedia('(pointer: coarse)').matches) { $('move-hint').textContent = '按住相对拖动 · 点箭头冲刺 · 点按支援'; document.querySelector('.lobby-bottom p').textContent = '相对拖动移动 · 按钮释放技能'; }

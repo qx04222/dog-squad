@@ -20,7 +20,7 @@ module.exports = {
     }
   },
   directories: { output: 'dist/mac', buildResources: 'assets' },
-  files: ['desktop/*.cjs', 'desktop/app.html', 'desktop/assets.js', 'desktop/release-config.json', 'src/*.js', 'src/style.css', 'content/builtin.js', 'assets/pet-squad.png', 'assets/enemy-robots.png', 'assets/boss-atlas-v6.png', 'assets/icon.png', 'assets/key-art.jpg', 'assets/world-map.jpg', 'LICENSE', 'LICENSE-ASSETS.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md', 'THIRD_PARTY_NOTICES.md', 'package.json'],
+  files: ['desktop/*.cjs', 'desktop/app.html', 'desktop/assets.js', 'desktop/release-config.json', 'src/*.js', 'src/style.css', 'content/builtin.js', 'assets/pet-squad.png', 'assets/enemy-robots.png', 'assets/boss-atlas-v6.png', 'assets/icon.png', 'assets/key-art.jpg', 'assets/world-map.jpg', 'assets/hero-cute.jpg', 'assets/story-postcard.jpg', 'assets/victory-postcard.jpg', 'assets/world-cute.jpg', 'LICENSE', 'LICENSE-ASSETS.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md', 'assets/ART-PROVENANCE-1.1.md', 'assets/ART-MANIFEST-1.1.json', 'assets/hero-portraits.webp', 'assets/HERO-PORTRAITS-PROVENANCE-1.1.md', 'THIRD_PARTY_NOTICES.md', 'package.json'],
   artifactName: 'Dog-Squad-${version}-${arch}.${ext}',
   forceCodeSigning: release.production === true,
   mac: {

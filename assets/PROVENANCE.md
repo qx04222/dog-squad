@@ -10,6 +10,9 @@
 | `icon.png`、`icon.icns` | 原创应用图标及其 macOS 格式转换。 |
 | `key-art.jpg` / `.webp` | 1.0 双主角宣传插画，同一图像的压缩导出。 |
 | `world-map.jpg`、`world-panorama.webp` | 1.0 六岛世界全景，同一图像的压缩导出。 |
+| `hero-cute`、`story-postcard`、`victory-postcard`、`world-cute`（JPG / WebP） | 1.1 可爱角色主视觉、单页故事、胜利明信片和六岛地图，完整来源见 [1.1 素材记录](ART-PROVENANCE-1.1.md)。 |
+
+1.1 的 `hero-portraits.webp` 是透明双队长 UI 图集，仅用于队长画像与选择按钮，来源见 [头像记录](HERO-PORTRAITS-PROVENANCE-1.1.md)。
 
 1.0 两张新插画的完整提示词和检查说明见 [ART-PROVENANCE-1.0.md](ART-PROVENANCE-1.0.md)。图像提示未要求模仿特定艺术家、第三方品牌或现成游戏角色。生成来源不构成对所有地区版权可保护性的保证。
 

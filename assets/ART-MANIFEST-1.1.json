@@ -1,0 +1,50 @@
+{
+  "version": "1.1.0",
+  "files": [
+    {
+      "path": "hero-cute.jpg",
+      "bytes": 669082,
+      "sha256": "6283b9fbee0105f6d48a0404e5973da506c9bb4ae66f0c73976e5abdf9c3fd56"
+    },
+    {
+      "path": "hero-cute.webp",
+      "bytes": 307450,
+      "sha256": "5e5384c634470a59ba522c6088590ced57ea646983f06ca8dff686d559dfba11"
+    },
+    {
+      "path": "story-postcard.jpg",
+      "bytes": 699749,
+      "sha256": "99f87a76620fbf2967eb2bf6c31e14e80cdecb5f8601996d39c8d264394b1607"
+    },
+    {
+      "path": "story-postcard.webp",
+      "bytes": 327620,
+      "sha256": "b2f6ece10e14c6d9c4bd9561d0ef65df330992fd60aa20deed15c0617f13ae0e"
+    },
+    {
+      "path": "victory-postcard.jpg",
+      "bytes": 665779,
+      "sha256": "269d7b2c7b3a8d5bf253e9da84d26e5277affd00187eafcdf3a8a4f5bb4dabc1"
+    },
+    {
+      "path": "victory-postcard.webp",
+      "bytes": 308632,
+      "sha256": "d965c6f387c709cba76c562168ab639c85652428b634796208d433f43bab9dd7"
+    },
+    {
+      "path": "world-cute.jpg",
+      "bytes": 978835,
+      "sha256": "0e87f87461d894e2aef94890e37eb5ee8cd278e3d8ba0bd4150bcd5cc968e1ae"
+    },
+    {
+      "path": "world-cute.webp",
+      "bytes": 501860,
+      "sha256": "a76f6da86cb09601b00958373024b442527791bace2648873737bfee919bcb28"
+    },
+    {
+      "path": "hero-portraits.webp",
+      "bytes": 311848,
+      "sha256": "fe407cf7b0e8c7c987fbf56ecd660dfa1c8b6c4370718bb57ee96c734cc9facf"
+    }
+  ]
+}

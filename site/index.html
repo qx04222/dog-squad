@@ -3,136 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#071b24">
-  <meta name="description" content="狗狗突击队是一款由 Ramen 与 Bing Bong 领队的原创双犬战术射击冒险。48 个关卡，离线可玩，本地存档，开源发布。">
-  <meta property="og:title" content="狗狗突击队 · Dog Squad">
-  <meta property="og:description" content="两只狗狗，一支小队，六章星海远征。">
-  <meta property="og:image" content="assets/key-art.webp">
-  <title>狗狗突击队 · Dog Squad</title>
+  <meta name="theme-color" content="#54c9b6">
+  <meta name="description" content="狗狗突击队 1.1：和 Ramen、Bing Bong 一起跑过六座可爱岛屿。48 关，浏览器直接玩，Mac 可离线运行。">
+  <meta property="og:title" content="狗狗突击队 1.1 · Dog Squad">
+  <meta property="og:description" content="两只狗狗，一支小队，六座会发光的岛。">
+  <meta property="og:image" content="assets/hero-cute.webp">
+  <title>狗狗突击队 1.1 · Dog Squad</title>
   <link rel="icon" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script src="site.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
-  <div class="atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
   <header class="topbar">
-    <a class="brand" href="#top" aria-label="狗狗突击队首页">
-      <img src="assets/icon.png" alt="">
-      <span><b>狗狗突击队</b><small>DOG SQUAD</small></span>
-    </a>
-    <nav aria-label="主导航">
-      <a href="#story">故事</a><a href="#captains">队长</a><a href="#expedition">远征</a><a href="#open-source">开源</a>
-    </nav>
-    <a class="mini-cta" href="play/">立即试玩 <span aria-hidden="true">↗</span></a>
+    <a class="brand" href="#top" aria-label="狗狗突击队首页"><img src="assets/icon.png" alt=""><span><b>狗狗突击队</b><small>DOG SQUAD · 1.1</small></span></a>
+    <nav aria-label="主导航"><a href="#world">世界地图</a><a href="#play">怎么玩</a><a href="#open-source">开源</a></nav>
+    <a class="nav-play" href="play/">直接玩 <span aria-hidden="true">→</span></a>
   </header>
-
   <main id="main">
     <section class="hero" id="top">
-      <div class="hero-copy reveal">
-        <p class="kicker"><span>V1.0</span> ORIGINAL TACTICAL ADVENTURE</p>
-        <h1>当星光熄灭，<br><em>狗狗点亮航路。</em></h1>
-        <p class="lead">一场城市停电牵出被掩埋四年的失联事故。Ramen 与 Bing Bong 从封锁之夜出发，循着城市、外海与极光中的呼叫，一路抵达等待返航的晨曦星港。</p>
-        <div class="hero-actions">
-          <a class="primary" href="play/"><span>浏览器直接玩</span><small>无需安装 · 本地存档</small></a>
-          <a class="secondary" href="https://github.com/qx04222/dog-squad/releases/download/v1.0.0/Dog-Squad-1.0.0-arm64.dmg"><span>下载 Mac 版</span><small>Apple Silicon · macOS 13+</small></a>
-        </div>
-        <div class="trust-row" aria-label="产品特点"><span>48 个手工关卡</span><span>8 套战术装备</span><span>零广告与内购</span></div>
+      <div class="hero-art reveal"><img src="assets/hero-cute.webp" alt="Ramen 和 Bing Bong 在鲜花与浮空岛之间开心奔跑"><span class="art-label">角色与世界观插画 · 非实机画面</span></div>
+      <div class="hero-card reveal" data-delay="1">
+        <p class="eyebrow"><span>1.1</span> CUTE EXPEDITION UPDATE</p>
+        <h1>一起出发，<br><em>把灯点亮！</em></h1>
+        <p>和拉布拉多 Ramen、金毛 Bing Bong 穿过六座岛，救回伙伴，打败可爱又难缠的机械军团。</p>
+        <div class="actions"><a class="button primary" href="play/"><b>浏览器直接玩</b><small>无需安装 · 自动存档</small></a><a class="button secondary" href="https://github.com/qx04222/dog-squad/releases/download/v1.1.0/Dog-Squad-1.1.0-arm64.dmg"><b>下载 Mac 版</b><small>Apple Silicon · macOS 13+</small></a></div>
       </div>
-      <div class="hero-art reveal" data-delay="1">
-        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-        <div class="mission-stamp"><small>MISSION</small><b>01</b><span>星海集结</span></div>
-        <picture>
-          <source srcset="assets/key-art.webp" type="image/webp">
-          <img src="assets/icon.png" alt="拉布拉多 Ramen 和金毛 Bing Bong 身穿星际装备并肩出发">
-        </picture>
-        <div class="status-card"><i></i><span><small>SQUAD STATUS</small><b>全员准备完毕</b></span><strong>READY</strong></div>
-      </div>
-      <div class="scroll-note" aria-hidden="true">SCROLL TO DEPLOY <i></i></div>
+      <div class="sparkles" aria-hidden="true"><i>✦</i><i>●</i><i>✿</i></div>
     </section>
-
-    <section class="manifesto" id="story">
-      <div class="section-number">01 / STORY</div>
-      <div class="manifesto-copy reveal">
-        <p class="eyebrow">一段关于勇气、信任与回家的故事</p>
-        <h2>它从一封失真的求救信开始。</h2>
-        <p>灯塔把整座城市锁进“绝对安全”，十七人的沿海求援却从报表中消失。小队必须公开系统不愿承认的未知，让每个具体的人重新回到地图上。</p>
-        <p>成长配置决定队长的战斗方式，主线剧情则随通关逐章展开。每份胜利档案都会补全人物与事故的细节，把城市停电、天空花园、机械极光和迟到多年的方舟接成一条归途。</p>
-      </div>
-      <blockquote class="radio reveal" data-delay="1"><span>狗狗突击队行动准则</span><p>“每一声呼叫，都值得一个回答。”</p><cite>— Ramen &amp; Bing Bong</cite></blockquote>
+    <section class="quick-facts" aria-label="游戏特点"><div><strong>48</strong><span>个完整关卡</span></div><div><strong>2</strong><span>位狗狗队长</span></div><div><strong>8</strong><span>套战术装备</span></div><div><strong>0</strong><span>广告与内购</span></div></section>
+    <section class="world" id="world">
+      <div class="section-copy reveal"><p class="eyebrow">SIX ISLANDS · ONE WAY HOME</p><h2>六座岛，<br>拼成一条回家的路。</h2><p>每章 8 关。点亮一条条航线，下一站就在图上。</p></div>
+      <figure class="world-art reveal" data-delay="1"><img src="assets/world-cute.webp" alt="六座风格各异的海上与浮空岛屿组成的远征地图"><figcaption>世界地图插画 · WORLD CONCEPT ART</figcaption></figure>
+      <ol class="chapter-pills" aria-label="六个章节"><li><b>01</b>封锁之夜</li><li><b>02</b>回声中的城</li><li><b>03</b>明日航线</li><li><b>04</b>天空花园</li><li><b>05</b>机械极光</li><li><b>06</b>晨曦星港</li></ol>
     </section>
-
-    <section class="captains" id="captains">
-      <div class="section-heading reveal"><span class="section-number">02 / CAPTAINS</span><h2>两位队长，<br>两种破局方式。</h2><p>队长不是数值不同的皮肤。每位角色拥有独立技能、成长路线与战斗节奏。</p></div>
-      <div class="captain-stage reveal">
-        <article class="captain-card ramen active" data-captain="ramen">
-          <button type="button" aria-pressed="true" aria-label="查看 Ramen 队长资料">
-            <span class="dog-portrait"><img src="assets/icon.png" alt="Ramen，拉布拉多队长"></span>
-            <span class="captain-data"><small>01 · FIELD COMMANDER</small><strong>RAMEN</strong><em>拉布拉多 · 战场掌控</em></span>
-          </button>
-        </article>
-        <article class="captain-card bing" data-captain="bing">
-          <button type="button" aria-pressed="false" aria-label="查看 Bing Bong 队长资料">
-            <span class="dog-portrait"><img src="assets/icon.png" alt="Bing Bong，金毛队长"></span>
-            <span class="captain-data"><small>02 · BREAKER CAPTAIN</small><strong>BING BONG</strong><em>金毛 · 火力突进</em></span>
-          </button>
-        </article>
-        <div class="captain-detail" aria-live="polite">
-          <span class="detail-index">R / 01</span>
-          <div><small class="detail-role">控制 · 救援 · 连锁</small><h3 class="detail-title">把混乱变成机会。</h3><p class="detail-copy">以凝时标记场切开敌阵，用链闪脉冲串联目标，再用救援信标把队员带回火线。适合观察局势、精确调度的队长。</p></div>
-          <ul class="skill-list"><li><b>Q</b><span>凝时标记场</span></li><li><b>E</b><span>救援信标</span></li><li><b>R</b><span>星轨总动员</span></li></ul>
-        </div>
-      </div>
+    <section class="play" id="play">
+      <div class="play-copy reveal"><p class="eyebrow">EASY TO START · FUN TO MASTER</p><h2>跑起来，<br>小队会跟上。</h2><p>自动射击让你专注移动、冲刺和技能时机。Ramen 擅长控制与救援，Bing Bong 擅长破甲与爆发。</p><div class="keys" aria-label="操作方式"><span><kbd>A D / ← →</kbd> 移动</span><span><kbd>Q E R</kbd> 技能</span><span><kbd>Shift</kbd> 冲刺</span></div><a class="text-link" href="play/">全屏开始任务 <span>↗</span></a></div>
+      <div class="game-frame reveal" data-delay="1"><div class="frame-top"><span><i></i><i></i><i></i></span><b>实时游戏画面</b><a href="play/">放大 ↗</a></div><iframe title="狗狗突击队在线试玩" src="play/" loading="lazy"></iframe></div>
     </section>
-
-    <section class="chapters" id="expedition">
-      <div class="section-heading reveal"><span class="section-number">03 / EXPEDITION</span><h2>六段航路，一条完整的归途。</h2><p>点击章节，查看远征记录。每章 8 个关卡，从封锁之夜一路抵达晨曦星港。</p></div>
-      <p class="art-caption">世界观概念美术 · WORLD CONCEPT ART</p>
-      <div class="chapter-console reveal">
-        <div class="chapter-rail" role="tablist" aria-label="故事章节">
-          <button role="tab" aria-selected="true" aria-controls="chapter-panel" data-chapter="0"><b>I</b><span>封锁之夜</span></button>
-          <button role="tab" aria-selected="false" aria-controls="chapter-panel" data-chapter="1"><b>II</b><span>回声中的城</span></button>
-          <button role="tab" aria-selected="false" aria-controls="chapter-panel" data-chapter="2"><b>III</b><span>明日航线</span></button>
-          <button role="tab" aria-selected="false" aria-controls="chapter-panel" data-chapter="3"><b>IV</b><span>天空花园</span></button>
-          <button role="tab" aria-selected="false" aria-controls="chapter-panel" data-chapter="4"><b>V</b><span>机械极光</span></button>
-          <button role="tab" aria-selected="false" aria-controls="chapter-panel" data-chapter="5"><b>VI</b><span>晨曦星港</span></button>
-        </div>
-        <div class="chapter-panel" id="chapter-panel" role="tabpanel">
-          <div class="chapter-glyph"><span>CHAPTER</span><b>I</b></div>
-          <div class="chapter-copy"><small>01—08 / 城市封锁</small><h3>封锁之夜</h3><p>城市导航网封锁所有出口。循着求援，两只救出失联队伍，发现保护指令中的盲点，并让黎明重新抵达街道。</p><strong>关键词：封锁 · 未知 · 公开依据</strong></div>
-          <div class="chapter-progress" aria-label="8 个关卡"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        </div>
-      </div>
+    <section class="features">
+      <article class="reveal"><span aria-hidden="true">★</span><h3>队长成长</h3><p>三条路线、九个训练节点，按你的打法升级。</p></article>
+      <article class="reveal" data-delay="1"><span aria-hidden="true">⚡</span><h3>多种技能</h3><p>控场、救援、破甲、弹幕，每位队长都有自己的节奏。</p></article>
+      <article class="reveal" data-delay="2"><span aria-hidden="true">♡</span><h3>本地保存</h3><p>关卡、星级和成长自动保存在设备上，也可导入导出。</p></article>
+      <article class="reveal" data-delay="3"><span aria-hidden="true">⌂</span><h3>离线可玩</h3><p>不需要账号，不上传行动记录，Mac 和离线网页版都能运行。</p></article>
     </section>
-
-    <section class="play-showcase" id="play-preview">
-      <div class="preview-copy reveal"><span class="section-number">04 / PLAY</span><h2>进场只要三秒。<br>精通需要整段远征。</h2><p>自动射击让你专注走位与队伍调度。冲刺穿越弹幕，选择时机释放队长技能，再以装备组合塑造每次远征。</p><dl><div><dt>移动</dt><dd>WASD / 方向键</dd></div><div><dt>技能</dt><dd>Q · E · R · Space</dd></div><div><dt>冲刺</dt><dd>Shift / ← →</dd></div></dl></div>
-      <div class="game-window reveal" data-delay="1">
-        <div class="window-bar"><i></i><i></i><i></i><span>DOG SQUAD // LIVE MISSION</span><a href="play/">全屏打开 ↗</a></div>
-        <iframe title="狗狗突击队在线试玩" src="play/" loading="lazy"></iframe>
-      </div>
-    </section>
-
-    <section class="arsenal">
-      <div class="arsenal-title reveal"><span class="section-number">05 / BUILD</span><h2>装备决定打法，<br>成长留下你的痕迹。</h2></div>
-      <div class="feature-grid reveal">
-        <article><span>08</span><h3>战术装备</h3><p>从连锁脉冲到护卫核心，每套装备都改变射击节奏与队伍站位。</p></article>
-        <article><span>03×03</span><h3>队长成长</h3><p>三条升级路线、九个训练节点。用星级成绩解锁属于你的队长流派。</p></article>
-        <article><span>∞</span><h3>本地远征档案</h3><p>自动保存关卡、星级与成长选择。网页版与 Mac 版均可导入导出。</p></article>
-        <article><span>OFF</span><h3>离线也能出发</h3><p>单机运行，不依赖账号，没有广告或内购，也不会上传行动记录。</p></article>
-      </div>
-    </section>
-
     <section class="download" id="download">
-      <div class="download-mark" aria-hidden="true">DS</div>
-      <div class="download-copy reveal"><p class="eyebrow">READY FOR DEPLOYMENT</p><h2>下一盏灯，<br>由你点亮。</h2><p>完整 6 章、48 个关卡。选择浏览器立即出发，或下载 Mac 版离线游玩。</p><div class="hero-actions"><a class="primary" href="play/"><span>浏览器直接玩</span><small>现代桌面浏览器</small></a><a class="secondary light" href="https://github.com/qx04222/dog-squad/releases/download/v1.0.0/Dog-Squad-1.0.0-arm64.dmg"><span>下载 Mac 版</span><small>Apple Silicon · macOS 13+</small></a></div><a class="web-zip" href="https://github.com/qx04222/dog-squad/releases/download/v1.0.0/Dog-Squad-1.0.0-Web.zip">下载离线网页版 ZIP →</a></div>
+      <div class="download-paw" aria-hidden="true">♥</div>
+      <div class="download-copy reveal"><p class="eyebrow">READY, CAPTAIN?</p><h2>下一站，<br>等你来点亮。</h2><p>完整 6 章、48 关。现在就从浏览器出发，或下载 Mac 版慢慢玩。</p><div class="actions"><a class="button primary" href="play/"><b>立即试玩</b><small>现代桌面浏览器</small></a><a class="button secondary" href="https://github.com/qx04222/dog-squad/releases/download/v1.1.0/Dog-Squad-1.1.0-arm64.dmg"><b>Mac 1.1</b><small>下载 DMG</small></a></div><a class="zip-link" href="https://github.com/qx04222/dog-squad/releases/download/v1.1.0/Dog-Squad-1.1.0-Web.zip">下载离线网页版 ZIP →</a></div>
     </section>
   </main>
-
   <footer id="open-source">
-    <div class="footer-brand"><img src="assets/icon.png" alt=""><p><b>狗狗突击队 · Dog Squad</b><span>一段由 Ramen、Bing Bong 与开源社区共同守护的星海远征。</span></p></div>
-    <div class="footer-links"><div><b>PROJECT</b><a href="https://github.com/qx04222/dog-squad">GitHub 源码</a><a href="https://github.com/qx04222/dog-squad/releases/tag/v1.0.0">发行记录</a><a href="https://github.com/qx04222/dog-squad/issues">问题反馈</a></div><div><b>PLAY</b><a href="play/">在线试玩</a><a href="#captains">队长资料</a><a href="#expedition">章节路线</a></div></div>
-    <div class="footer-note"><span>代码以 MIT 许可证开放</span><span>角色与美术授权详见仓库说明</span><span>© <span id="year">2026</span> Dog Squad</span></div>
+    <div class="footer-brand"><img src="assets/icon.png" alt=""><p><b>狗狗突击队 · Dog Squad</b><span>和两只狗狗一起守住每一声呼叫。</span></p></div>
+    <div class="footer-links"><a href="https://github.com/qx04222/dog-squad">GitHub 源码</a><a href="https://github.com/qx04222/dog-squad/releases/tag/v1.1.0">v1.1.0 发行记录</a><a href="https://github.com/qx04222/dog-squad/issues">问题反馈</a></div>
+    <div class="footer-meta"><span>代码以 MIT 许可证开放</span><span>美术与角色授权见仓库说明</span><span>© <span id="year">2026</span> Dog Squad</span></div>
   </footer>
 </body>
 </html>

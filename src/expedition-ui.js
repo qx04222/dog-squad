@@ -16,7 +16,9 @@
   const ROMAN = ['I','II','III','IV','V','VI'];
   const KIT_GLYPHS = ['◉','ϟ','⬡','✦','◎','⌁','✹','✧'];
   const KIT_COLORS = ['#8ee2cf','#ffb18d','#a9c5ff','#e4b2f4','#a8e1a4','#f0d68f','#81d9ee','#f6b9cf'];
-  const WORLD_POINTS = [[16,76],[30,43],[52,66],[50,23],[78,51],[86,19]];
+  const WORLD_POINTS = [[17,26],[50,26],[83,26],[17,74],[50,74],[83,74]];
+  const NODE_OFFSETS = [[-8,4],[-2.7,4],[2.7,4],[8,4],[8,11],[2.7,11],[-2.7,11],[-8,11]];
+  const nextFrame = callback => typeof requestAnimationFrame === 'function' ? requestAnimationFrame(callback) : callback();
   const $ = id => typeof document !== 'undefined' ? document.getElementById(id) : null;
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -122,61 +124,58 @@
     const {acts=[],levels=[],records={},currentLevel=0,onSelect}=options||{};
     const current=typeof currentLevel==='string'?levels.findIndex(l=>l.id===currentLevel):num(currentLevel);
     const complete=levels.filter(l=>recordFor(records,l.id).complete).length;
-    const summary=$('campaign-summary');if(summary)summary.textContent=`${acts.length} 个章节 · ${complete} / ${levels.length} 次行动完成。选择一站，继续我们的故事。`;
-    const recommend=levels.findIndex(l=>!recordFor(records,l.id).complete);
-    const frag=document.createDocumentFragment();
-    if(recommend>=0){
-      const next=button('campaign-next',undefined,()=>onSelect?.(recommend));
-      next.append(el('span','next-compass','✦'),el('span','next-label','推荐下一站'));
-      const copy=el('span','next-copy');copy.append(el('b','',levels[recommend].name),el('small','',levels[recommend].subtitle||levels[recommend].objective||''));next.append(copy,el('span','next-arrow','开始准备 ↗'));frag.append(next);
-    }else{
-      const done=el('div','campaign-complete');done.append(el('b','','所有航标都已点亮。'),el('p','','故事留在这里。换一位队长、尝试新的配置，再去看看熟悉的伙伴。'));frag.append(done);
+    const summary=$('campaign-summary');if(summary)summary.textContent=`${complete} / ${levels.length} 已点亮`;
+    const islands=[];
+    for(const act of acts){
+      const entries=levels.map((level,index)=>({level,index})).filter(row=>belongs(row.level,act));
+      for(let offset=0;offset<entries.length;offset+=8)islands.push({act,entries:entries.slice(offset,offset+8),offset,total:entries.length});
     }
-    const overview=el('section','atlas-overview');overview.setAttribute('aria-label','六座故事岛屿总览');
-    const panorama=el('img','atlas-panorama');panorama.src=window.DOG_WORLD_MAP||'../assets/world-map.jpg';panorama.alt='六座星海岛屿与远征航线全景地图';overview.append(panorama);
-    const route=el('div','atlas-route');
-    const chapterKey=act=>act.key||`${act.packId||''}:${act.id}`;
-    const focusChapter=act=>{const chapter=Array.from(target.querySelectorAll('.chapter-card')).find(card=>card.dataset.actKey===chapterKey(act));chapter?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});chapter?.querySelector('.map-level.current,.map-level')?.focus({preventScroll:true});};
-    acts.slice(0,WORLD_POINTS.length).forEach((act,index)=>{
-      const entries=levels.map((level,i)=>({level,index:i})).filter(row=>belongs(row.level,act));
-      const count=entries.filter(row=>recordFor(records,row.level.id).complete).length;
-      const point=button('atlas-point',undefined,()=>focusChapter(act));
-      point.style.setProperty('--map-x',`${WORLD_POINTS[index%WORLD_POINTS.length][0]}%`);point.style.setProperty('--map-y',`${WORLD_POINTS[index%WORLD_POINTS.length][1]}%`);
-      point.classList.toggle('active',entries.some(row=>row.index===current));point.classList.toggle('complete',count===entries.length&&entries.length>0);
-      point.setAttribute('aria-label',`${titleFor(act)}，${count} / ${entries.length} 次行动完成`);
-      point.append(el('span','atlas-point-pulse'),el('b','',String(index+1).padStart(2,'0')),el('small','',titleFor(act)));route.append(point);
-    });
-    overview.append(route,el('span','atlas-caption','THE HOMEWARD ROUTE / 点击航标查看章节'));frag.append(overview);
-    if(acts.length>WORLD_POINTS.length){const extensions=el('nav','atlas-expansions');extensions.setAttribute('aria-label','扩展章节航线');extensions.append(el('b','','扩展航线'));for(const act of acts.slice(WORLD_POINTS.length))extensions.append(button('chapter-story-link',titleFor(act),()=>focusChapter(act)));frag.append(extensions);}
-    const grid=el('div','chapter-grid');
-    acts.forEach((act,index)=>{
-      const entries=levels.map((level,i)=>({level,index:i})).filter(row=>belongs(row.level,act));
-      const count=entries.filter(row=>recordFor(records,row.level.id).complete).length;
-      const theme=THEMES[index%THEMES.length], card=el('article',`chapter-card chapter-${theme.key}`);card.dataset.actId=act.id;card.dataset.actKey=chapterKey(act);
-      card.style.setProperty('--chapter-accent',theme.accent);card.style.setProperty('--chapter-sky',theme.sky);
-      const isCurrent=entries.some(row=>row.index===current);if(isCurrent)card.classList.add('current-chapter');
-      const art=el('div','chapter-art');art.append(scene(theme,index));
-      if(isCurrent)art.append(el('span','chapter-current-flag','你在这里 · 当前章节'));
-      art.append(el('span','chapter-number',`CHAPTER ${ROMAN[index]||String(index+1).padStart(2,'0')}`),el('span','chapter-emblem',theme.emblem));card.append(art);
-      const body=el('div','chapter-body'),heading=el('div','chapter-heading');
-      heading.append(el('h3','',titleFor(act)),el('span','chapter-count',`${count} / ${entries.length}`));body.append(heading);
-      body.append(el('p','chapter-landmark',theme.label),el('p','chapter-story',act.synopsis||'沿着新的航线出发，发现下一段故事。'));
-      const storyActions=el('div','chapter-story-actions');
-      const opening=button('chapter-story-link','阅读启程');opening.dataset.storyType='chapter';opening.dataset.storyAct=act.id;opening.dataset.storyPhase='opening';
-      const ending=button('chapter-story-link chapter-ending-link','阅读终章');ending.dataset.storyType='chapter';ending.dataset.storyAct=act.id;ending.dataset.storyPhase='ending';
-      const storyChapter=(!act.packId||act.packId==='daybreak')&&window.DogStory?.getChapter(act.id);
-      if(storyChapter){const finale=entries.at(-1);ending.disabled=!finale||!recordFor(records,finale.level.id).complete;ending.textContent=ending.disabled?'终章 · 完成本章后解锁':'阅读终章';storyActions.append(opening,ending);body.append(storyActions);}
-      const meter=el('div','chapter-meter');meter.setAttribute('role','progressbar');meter.setAttribute('aria-label',`${titleFor(act)}完成进度`);meter.setAttribute('aria-valuemin','0');meter.setAttribute('aria-valuemax',String(entries.length));meter.setAttribute('aria-valuenow',String(count));const fill=el('i');fill.style.width=`${entries.length?count/entries.length*100:0}%`;meter.append(fill);body.append(meter);
-      const nodes=el('div','chapter-nodes');nodes.setAttribute('aria-label',`${titleFor(act)}行动列表`);
-      entries.forEach(({level,index:levelIndex},position)=>{
-        const record=recordFor(records,level.id),node=button('map-level',undefined,()=>onSelect?.(levelIndex));
-        node.dataset.mapLevel=String(levelIndex);node.classList.toggle('complete',record.complete);node.classList.toggle('current',levelIndex===current);node.classList.toggle('chapter-finale',position===entries.length-1);
-        node.setAttribute('aria-pressed',String(levelIndex===current));node.setAttribute('aria-label',`${String(levelIndex+1).padStart(2,'0')} ${level.name}，${record.complete?(record.assistOnly?'辅助模式完成，':'已完成，')+record.stars+' 星':'未完成'}${position===entries.length-1?'，章节终战':''}`);
-        const token=el('span','node-token',position===entries.length-1?'✦':String(position+1).padStart(2,'0'));node.append(token,el('b','node-name',level.name),el('small','node-stars',levelIndex===current?'当前行动':record.complete?'★'.repeat(record.stars)+'☆'.repeat(3-record.stars):position===entries.length-1?'章节终战':'待出发'));nodes.append(node);
+    const pageCount=Math.max(1,Math.ceil(islands.length/6));
+    const activeIsland=Math.max(0,islands.findIndex(island=>island.entries.some(row=>row.index===current)));
+    let activePage=Math.min(pageCount-1,Math.floor(activeIsland/6));
+    const shell=el('div','picture-map-shell');
+    const pageTabs=el('nav','map-page-tabs');pageTabs.setAttribute('aria-label','选择地图页');
+    const toolbar=el('div','map-toolbar'),zoomTools=el('div','map-zoom-tools');let zoom=1;
+    const zoomLabel=el('span','map-zoom-label','100%');
+    const centerCurrent=()=>{const node=viewport.querySelector('.picture-level.current');node?.scrollIntoView({block:'center',inline:'center',behavior:'instant'});};
+    const applyZoom=()=>{const canvas=viewport.querySelector('.picture-map-canvas');if(!canvas)return;canvas.style.width=`${zoom*100}%`;canvas.style.minWidth=`${zoom*960}px`;zoomLabel.textContent=`${Math.round(zoom*100)}%`;nextFrame(centerCurrent);};
+    const zoomOut=button('map-zoom-button','−',()=>{zoom=Math.max(1,zoom-.25);applyZoom();});zoomOut.setAttribute('aria-label','缩小地图');
+    const zoomIn=button('map-zoom-button','＋',()=>{zoom=Math.min(1.75,zoom+.25);applyZoom();});zoomIn.setAttribute('aria-label','放大地图');
+    zoomTools.append(zoomOut,zoomLabel,zoomIn);toolbar.append(pageTabs,zoomTools);
+    const viewport=el('div','picture-map-viewport');viewport.tabIndex=0;viewport.setAttribute('aria-label','关卡地图，可横向和纵向滚动');
+    const renderPage=page=>{
+      activePage=page;
+      const pageIslands=islands.slice(page*6,page*6+6),canvas=el('section','picture-map-canvas');
+      canvas.dataset.page=String(page);canvas.setAttribute('aria-label',`第 ${page+1} 张冒险地图`);
+      const image=el('img','picture-map-art');image.src=window.DOG_WORLD_CUTE||'';image.alt='六座可爱岛屿组成的狗狗突击队冒险地图';canvas.append(image);
+      const layer=el('div','picture-map-layer');
+      pageIslands.forEach(({act,entries,offset:missionOffset,total},slot)=>{
+        const [cx,cy]=WORLD_POINTS[slot];
+        const count=entries.filter(row=>recordFor(records,row.level.id).complete).length;
+        const island=el('section','map-island');island.style.setProperty('--island-x',`${cx}%`);island.style.setProperty('--island-y',`${cy}%`);island.dataset.actKey=act.key||`${act.packId||'builtin'}:${act.id}`;
+        const label=el('div','map-island-label');label.append(el('b','',titleFor(act)+(total>8?` · ${Math.floor(missionOffset/8)+1}`:'')),el('span','',`${count}/${entries.length}`));island.append(label);
+        entries.forEach(({level,index:levelIndex},position)=>{
+          const record=recordFor(records,level.id),offset=NODE_OFFSETS[position%NODE_OFFSETS.length];
+          const node=button('map-level picture-level',undefined,()=>onSelect?.(levelIndex));
+          node.style.setProperty('--node-x',`${cx+offset[0]}%`);node.style.setProperty('--node-y',`${cy+offset[1]}%`);
+          node.dataset.mapLevel=String(levelIndex);node.dataset.levelIndex=String(levelIndex);node.dataset.levelKey=`${level.packId||act.packId||'builtin'}:${level.key||level.id}`;
+          const finale=missionOffset+position===total-1;
+          node.classList.toggle('complete',record.complete);node.classList.toggle('current',levelIndex===current);node.classList.toggle('assist-only',record.assistOnly);node.classList.toggle('chapter-finale',finale);
+          node.setAttribute('aria-pressed',String(levelIndex===current));node.setAttribute('aria-label',`${level.name}，${levelIndex===current?'当前关卡，':''}${record.complete?record.stars+' 星完成'+(record.assistOnly?'，辅助模式':'，标准模式'):'待挑战'}`);
+          node.append(el('span','picture-level-token',finale?'★':String(missionOffset+position+1)),el('span','picture-level-stars',record.complete?'★'.repeat(record.stars):''),el('span','picture-level-tooltip',level.name));
+          layer.append(node);
+        });
+        layer.append(island);
       });
-      body.append(nodes);card.append(body);grid.append(card);
-    });
-    frag.append(grid);target.replaceChildren(frag);
+      canvas.append(layer,el('span','map-drag-hint','↔ 拖动看地图'));
+      viewport.replaceChildren(canvas);applyZoom();
+      pageTabs.querySelectorAll('button').forEach((tab,index)=>{tab.classList.toggle('active',index===page);tab.setAttribute('aria-pressed',String(index===page));});
+      nextFrame(()=>{centerCurrent();viewport.querySelector('.picture-level.current')?.focus({preventScroll:true});});
+    };
+    for(let page=0;page<pageCount;page++){
+      const tab=button('map-page-tab',pageCount===1?'六岛地图':`地图 ${page+1}`,()=>renderPage(page));tab.setAttribute('aria-pressed',String(page===activePage));tab.classList.toggle('active',page===activePage);pageTabs.append(tab);
+    }
+    shell.append(toolbar,viewport);target.replaceChildren(shell);renderPage(activePage);
   }
   function renderCaptain(profile,callbacks) {
     const target=$('captain-content');if(!target)return;
@@ -217,13 +216,13 @@
   }
   function focusCurrentCampaign() {
     const node=$('campaign-map')?.querySelector('.map-level.current');if(!node)return false;
-    (node.closest('.chapter-card')||node).scrollIntoView({block:'start',behavior:'instant'});
+    node.scrollIntoView({block:'center',inline:'center',behavior:'instant'});
     node.focus({preventScroll:true});return true;
   }
   // Display-only debrief. Game owns the outcome, persisted record and transition timing.
   // No timers: restarting or skipping a reveal cannot leave a stale callback behind.
   function renderDebrief(options) {
-    const {won=false,stars=0,rank='—',archiveTitle='',archiveText='',instant=false}=options||{};
+    const {won=false,stars=0,rank='—',instant=false}=options||{};
     const overlay=$('result-overlay'),card=overlay?.querySelector('.result-card'),reveal=$('result-star-reveal');
     if(!card||!reveal)return;
     const earned=won?Math.min(3,num(stars)):0;
@@ -232,9 +231,12 @@
     reveal.hidden=!won;reveal.setAttribute('aria-label',`${earned} / 3 星，${3-earned} 颗未获得`);
     reveal.querySelectorAll('[data-result-star]').forEach((node,index)=>{node.classList.toggle('earned',index<earned);node.style.setProperty('--star-delay',`${index*.16}s`);});
     if($('result-stars'))$('result-stars').textContent=won?String(rank):'—';
-    if($('result-archive'))$('result-archive').hidden=!won;
-    if($('result-archive-title'))$('result-archive-title').textContent=archiveTitle||'这一站的回忆';
-    if($('result-archive-text'))$('result-archive-text').textContent=archiveText;
+    const stamp=card.querySelector('.result-rank-stamp');if(stamp)stamp.hidden=!won;
+    const picture=$('result-postcard');if(picture)picture.hidden=!won;
+    if($('result-kicker'))$('result-kicker').textContent=won?'行动完成':'再试一次';
+    if($('result-title'))$('result-title').textContent=won?'好耶，过关啦！':'差一点就成功！';
+    if($('result-description'))$('result-description').textContent=won?'新的小星星已经收好。':'换套装备，再来一次吧。';
+    for(const id of ['result-archive','result-story','result-growth'])if($(id))$(id).hidden=true;
     const content=card.querySelector('.result-content');if(content)content.scrollTop=0;
     const details=card.querySelector('.result-statistics');if(details)details.open=false;
     card.classList.add(instant||!won?'settled':'revealing');

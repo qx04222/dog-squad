@@ -15,7 +15,8 @@ The bundle ID (`com.dogsquad.game`), save key (`dog-squad-v4`) and level IDs are
 | --- | ---: |
 | isolated 0.9.9 update fixture, never published | 1 |
 | 1.0.0 | 2 |
-| next app release | 3 |
+| 1.1.0 | 3 |
+| next app release | 4 |
 
 Never reuse an epoch or publish different bytes at an existing version/tag. The former local 6.0 build has no custom updater and therefore requires one manual installation of public 1.0. After that bootstrap, later releases can be downloaded, verified and installed in-app.
 
@@ -47,13 +48,13 @@ The app updater private key must remain outside the repository with mode `0600`.
 
 ```sh
 node scripts/app-release.cjs \
-  --artifact "dist/mac/Dog-Squad-1.0.0-arm64.zip" \
-  --version 1.0.0 \
-  --epoch 2 \
+  --artifact "dist/mac/Dog-Squad-1.1.0-arm64.zip" \
+  --version 1.1.0 \
+  --epoch 3 \
   --key "$DOG_SQUAD_APP_UPDATE_PRIVATE_KEY" \
   --key-id app-publisher-2026 \
   --output "site/updates/app.json" \
-  --notes "Dog Squad public 1.0"
+  --notes "Dog Squad 1.1 visual adventure"
 ```
 
 The command refuses a private key inside the project or with group/other permissions, enforces the exact GitHub asset name and URL, hashes the final ZIP, and writes a signed envelope. It never prints private key material.

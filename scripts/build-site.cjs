@@ -16,6 +16,10 @@ fs.mkdirSync(path.join(output, 'assets'), { recursive: true });
 fs.mkdirSync(path.join(output, 'play'), { recursive: true });
 fs.copyFileSync(path.join(root, 'assets', 'icon.png'), path.join(output, 'assets', 'icon.png'));
 const promotionalArt = [
+  ['hero-cute.webp', 'hero-cute.webp'],
+  ['world-cute.webp', 'world-cute.webp'],
+  ['story-postcard.webp', 'story-postcard.webp'],
+  ['victory-postcard.webp', 'victory-postcard.webp'],
   ['key-art.webp', 'key-art.webp'],
   ['key-art-1.0.webp', 'key-art.webp'],
   ['world-panorama.webp', 'world-panorama.webp'],

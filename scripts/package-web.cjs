@@ -6,7 +6,7 @@ const out = path.join(root, 'dist', `Dog-Squad-${require('../package.json').vers
 const pending = out + '.pending';
 try {
   execFileSync(process.execPath, ['build.cjs'], { cwd: root, stdio: 'inherit' });
-  for (const file of ['狗狗突击队.html', '启动游戏.command', '怎么玩.txt', 'LICENSE', 'LICENSE-ASSETS.md', 'THIRD_PARTY_NOTICES.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md']) {
+  for (const file of ['狗狗突击队.html', '启动游戏.command', '怎么玩.txt', 'LICENSE', 'LICENSE-ASSETS.md', 'THIRD_PARTY_NOTICES.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md', 'assets/ART-PROVENANCE-1.1.md','assets/ART-MANIFEST-1.1.json','assets/HERO-PORTRAITS-PROVENANCE-1.1.md']) {
     fs.mkdirSync(path.dirname(path.join(stage,file)),{recursive:true});
     fs.copyFileSync(path.join(root, file), path.join(stage, file));
   }
@@ -17,7 +17,7 @@ try {
 from pathlib import Path
 import sys, zipfile
 stage, out = Path(sys.argv[1]), Path(sys.argv[2])
-names = ['狗狗突击队.html', '启动游戏.command', '怎么玩.txt', 'LICENSE', 'LICENSE-ASSETS.md', 'THIRD_PARTY_NOTICES.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md']
+names = ['狗狗突击队.html', '启动游戏.command', '怎么玩.txt', 'LICENSE', 'LICENSE-ASSETS.md', 'THIRD_PARTY_NOTICES.md', 'assets/PROVENANCE.md', 'assets/ART-PROVENANCE-1.0.md', 'assets/ART-PROVENANCE-1.1.md','assets/ART-MANIFEST-1.1.json','assets/HERO-PORTRAITS-PROVENANCE-1.1.md']
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as archive:
     for name in names:
         archive.write(stage / name, name)
