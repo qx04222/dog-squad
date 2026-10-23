@@ -1,7 +1,7 @@
 {
   "production": false,
   "channel": "stable",
-  "releaseEpoch": 2,
+  "releaseEpoch": 5,
   "teamId": "",
   "appUpdateURL": "https://your-account.github.io/your-game/updates/app.json",
   "contentFeedURL": "https://your-account.github.io/your-game/updates/content.json",

@@ -17,7 +17,7 @@ The bundle ID (`com.dogsquad.game`), save key (`dog-squad-v4`) and level IDs are
 | 1.0.0 | 2 |
 | 1.1.0 | 3 |
 | 1.2.0 | 4 |
-| next app release | 4 |
+| next app release | 5 or higher |
 
 Never reuse an epoch or publish different bytes at an existing version/tag. The former local 6.0 build has no custom updater and therefore requires one manual installation of public 1.0. After that bootstrap, later releases can be downloaded, verified and installed in-app.
 
