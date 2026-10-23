@@ -8,7 +8,7 @@ const source = fs.readFileSync(GAME, 'utf8');
 const begin = source.indexOf('  function setNativeBattle(active)');
 const end = source.indexOf('  function pause(reason', begin);
 assert.ok(begin >= 0 && end > begin, 'navigation functions must be extractable');
-const actualFunctions = source.slice(begin, end);
+const actualFunctions = source.match(/  function overlayActive\(active\) \{[^\n]+\}/)[0] + '\n' + source.slice(begin, end);
 
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 const nextTurn = () => new Promise(r => setImmediate(r));

@@ -1,7 +1,7 @@
 {
   "production": false,
   "channel": "stable",
-  "releaseEpoch": 3,
+  "releaseEpoch": 4,
   "teamId": "",
   "appUpdateURL": "https://qx04222.github.io/dog-squad/updates/app.json",
   "contentFeedURL": "https://qx04222.github.io/dog-squad/updates/content.json",

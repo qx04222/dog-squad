@@ -241,7 +241,7 @@ test('相同 act id 在不同关卡包中保持关卡键与岛组隔离', () => 
   assert.deepEqual(islands.map(node => node.dataset.actKey).sort(), ['pack-a:shared', 'pack-b:shared']);
 });
 
-test('辅助模式成绩在样式和无障碍名称中都与标准通关区分', () => {
+test('轻松模式成绩在样式和无障碍名称中都与标准通关区分', () => {
   const chapter = act('1');
   const mission = level(chapter, 0, { id: 'assist-win' });
   const map = render({ acts: [chapter], levels: [mission], currentLevel: 0, records: { 'assist-win': { assist: { stars: 2 } } } });
@@ -249,7 +249,7 @@ test('辅助模式成绩在样式和无障碍名称中都与标准通关区分',
 
   assert.ok(node.classList.contains('complete'));
   assert.ok(node.classList.contains('assist-only'));
-  assert.match(node.getAttribute('aria-label'), /辅助模式/);
+  assert.match(node.getAttribute('aria-label'), /轻松模式/);
   assert.doesNotMatch(node.getAttribute('aria-label'), /标准模式/);
 });
 
@@ -276,4 +276,15 @@ test('Story.canRead 拒绝 ending 时不渲染也不打开对话框', () => {
   assert.equal(dialog.open, false);
   assert.equal(dialog.showModalCount || 0, 0);
   assert.equal(title.textContent, '未渲染');
+});
+
+
+test('挑战成绩点亮地图并明确显示档位，不冒充标准或辅助', () => {
+  const chapter=act('1'), mission=level(chapter,0,{id:'expert-win'});
+  const map=render({acts:[chapter],levels:[mission],currentLevel:0,records:{'expert-win':{expert:{stars:3,medals:2}}}});
+  const node=map.querySelector('[data-map-level]');
+  assert.ok(node.classList.contains('complete'));
+  assert.ok(!node.classList.contains('assist-only'));
+  assert.match(node.getAttribute('aria-label'),/3 星完成，挑战模式/);
+  assert.doesNotMatch(node.getAttribute('aria-label'),/标准模式|轻松模式/);
 });

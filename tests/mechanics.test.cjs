@@ -111,10 +111,11 @@ test('repair swarm adds one repair unit to the normal opening wave and schedules
   assert.equal(enemies.length, ordinaryCount + 1);
   assert.equal(enemies.at(-1).kind, 'repair');
   const crates = new Set();
-  let input = {};
+  // This assertion measures the schedule, not crate survival under a 600-member volley.
+  // Keep the observer alive and remove outgoing fire so no crate vanishes in its spawn frame.
   for (let frame = 0; frame < 130 * 60 && game.state.time < config.duration && game.state.phase === 'playing'; frame++) {
-    if (frame % 6 === 0) input = pilot(game.state);
-    game.step(1 / 60, input);
+    game.state.bullets = []; game.state.invulnerable = 1;
+    game.step(1 / 60);
     for (const entity of game.state.entities) if (entity.type === 'crate') crates.add(entity.id);
     game.drainSignals();
   }

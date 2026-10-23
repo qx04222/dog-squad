@@ -35,10 +35,10 @@
     if (records && typeof records === 'object' && !Array.isArray(records)) {
       for (const [id, record] of Object.entries(records)) {
         if (!VALID_ID.test(id) || id === 'constructor') continue;
-        const normal = safeInt(record?.normal?.stars, 3) > 0, assist = safeInt(record?.assist?.stars, 3) > 0;
-        if (!normal && !assist) continue;
+        const completedModes = ['normal', 'assist', 'expert'].filter(mode => safeInt(record?.[mode]?.stars, 3) > 0);
+        if (!completedModes.length) continue;
         completed++;
-        medals += Math.max(normal ? safeInt(record?.normal?.medals, 3) : 0, assist ? safeInt(record?.assist?.medals, 3) : 0);
+        medals += Math.max(...completedModes.map(mode => safeInt(record[mode].medals, 3)));
       }
     }
     return { completed, medals, points: Math.min(9, 2 + Math.floor(completed / 4) + Math.floor(medals / 9)) };

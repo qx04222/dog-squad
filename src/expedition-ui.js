@@ -47,8 +47,8 @@
   function num(value) { return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0; }
   function recordFor(records, id) {
     const row = records && typeof records === 'object' ? records[id] : null;
-    const normal = row?.normal || {}, assist = row?.assist || {};
-    return { complete:num(normal.stars) > 0 || num(assist.stars) > 0, stars:Math.min(3,Math.max(num(normal.stars),num(assist.stars))), medals:Math.min(3,Math.max(num(normal.medals),num(assist.medals))), assistOnly:!num(normal.stars)&&!!num(assist.stars) };
+    const normal = row?.normal || {}, assist = row?.assist || {}, expert = row?.expert || {};
+    return { complete:num(normal.stars) > 0 || num(assist.stars) > 0 || num(expert.stars) > 0, stars:Math.min(3,Math.max(num(normal.stars),num(assist.stars),num(expert.stars))), medals:Math.min(3,Math.max(num(normal.medals),num(assist.medals),num(expert.medals))), assistOnly:!num(normal.stars)&&!num(expert.stars)&&!!num(assist.stars), modes:[['轻松',assist],['标准',normal],['挑战',expert]].filter(([,r])=>num(r.stars)>0).map(([label])=>label).join(' / ') };
   }
   function belongs(level, act) {
     if (!level || !act || level.act !== act.id) return false;
@@ -161,7 +161,7 @@
           node.dataset.mapLevel=String(levelIndex);node.dataset.levelIndex=String(levelIndex);node.dataset.levelKey=`${level.packId||act.packId||'builtin'}:${level.key||level.id}`;
           const finale=missionOffset+position===total-1;
           node.classList.toggle('complete',record.complete);node.classList.toggle('current',levelIndex===current);node.classList.toggle('assist-only',record.assistOnly);node.classList.toggle('chapter-finale',finale);
-          node.setAttribute('aria-pressed',String(levelIndex===current));node.setAttribute('aria-label',`${level.name}，${levelIndex===current?'当前关卡，':''}${record.complete?record.stars+' 星完成'+(record.assistOnly?'，辅助模式':'，标准模式'):'待挑战'}`);
+          node.setAttribute('aria-pressed',String(levelIndex===current));node.setAttribute('aria-label',`${level.name}，${levelIndex===current?'当前关卡，':''}${record.complete?record.stars+' 星完成'+('，'+record.modes+'模式'):'待挑战'}`);
           node.append(el('span','picture-level-token',finale?'★':String(missionOffset+position+1)),el('span','picture-level-stars',record.complete?'★'.repeat(record.stars):''),el('span','picture-level-tooltip',level.name));
           layer.append(node);
         });

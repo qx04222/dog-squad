@@ -27,7 +27,7 @@ function validateEnvelope(raw) {
   const storedData = JSON.stringify(parsed.data), data = parseProgress(storedData);
   return { savedAt: parsed.savedAt, data, requestedBuilds: parsed.data.captainBuilds, needsHealing: storedData !== JSON.stringify(data) };
 }
-const PREFERENCES = ['hero', 'loadout', 'easy', 'sound', 'musicVolume', 'effectsVolume', 'reducedMotion', 'combatText', 'effectsQuality', 'lastLevelId', 'captainBuilds'];
+const PREFERENCES = ['hero', 'loadout', 'difficultyMode', 'easy', 'sound', 'musicVolume', 'effectsVolume', 'reducedMotion', 'combatText', 'effectsQuality', 'lastLevelId', 'captainBuilds'];
 function mergeScoresKeepPreferences(primary, secondary) {
   const preferences = Object.fromEntries(PREFERENCES.map(key => [key, primary[key]]));
   const merged = DogProgress.importSave(JSON.stringify({ format: 'dog-squad-save', schema: 1, data: secondary }), primary, []);

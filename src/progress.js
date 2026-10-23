@@ -5,28 +5,38 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (Growth) {
   'use strict';
   const VALID_ID = /^[a-z][a-z0-9-]{1,63}$/;
+  const MODES = Object.freeze({ relaxed: 'assist', standard: 'normal', expert: 'expert' });
+  const RECORD_MODES = ['normal', 'assist', 'expert'];
+  const PROJECTIONS = [['normal', ''], ['assist', 'easy'], ['expert', 'expert']];
+  function normalizeDifficultyMode(value, easy) {
+    return typeof value === 'string' && Object.prototype.hasOwnProperty.call(MODES, value) ? value : easy === true ? 'relaxed' : 'standard';
+  }
+  function difficultyRecordKey(value, easy) { return MODES[normalizeDifficultyMode(value, easy)]; }
   const bounded = (v, max) => Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0;
   const storyFlags = value => Array.isArray(value) ? [...new Set(value.filter(key => typeof key === 'string' && /^[a-z][a-z0-9:-]{0,79}$/.test(key)))].slice(-128) : [];
   const cleanRecord = r => ({ stars: bounded(r?.stars, 3), best: bounded(r?.best, 9999999), medals: bounded(r?.medals, 3) });
+  const cleanModes = value => Object.fromEntries(RECORD_MODES.map(mode => [mode, cleanRecord(value?.[mode])]));
   function normalize(raw, levels) {
     const p = raw && typeof raw === 'object' ? raw : {};
     const records = Object.create(null);
     if (p.version === 4 && p.records && typeof p.records === 'object' && !Array.isArray(p.records)) {
-      for (const [key, value] of Object.entries(p.records)) if (VALID_ID.test(key)) records[key] = { normal: cleanRecord(value?.normal), assist: cleanRecord(value?.assist) };
+      for (const [key, value] of Object.entries(p.records)) if (VALID_ID.test(key)) records[key] = cleanModes(value);
     } else if (p.version === 2) {
       // v3 game used save format 2, exactly eight known story operations.
       for (let i = 0; i < 8; i++) records['daybreak-' + String(i + 1).padStart(2, '0')] = {
         normal: cleanRecord({ stars: p.stars?.[i], best: p.best?.[i], medals: p.medals?.[i] }),
-        assist: cleanRecord({ stars: p.easyStars?.[i], best: p.easyBest?.[i], medals: p.easyMedals?.[i] })
+        assist: cleanRecord({ stars: p.easyStars?.[i], best: p.easyBest?.[i], medals: p.easyMedals?.[i] }),
+        expert: cleanRecord()
       };
     }
     const volume = v => Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : .7;
     const selected = typeof p.lastLevelId === 'string' && VALID_ID.test(p.lastLevelId) ? p.lastLevelId : levels[0]?.id;
-    const save = { version: 4, records, storySeen: storyFlags(p.storySeen), captainBuilds: Growth.normalizeBuilds(p.captainBuilds, records), lastLevelId: selected, hero: bounded(p.hero, 1), loadout: bounded(p.loadout, Growth.LOADOUT_COUNT - 1), easy: p.easy === true, sound: p.sound !== false, musicVolume: volume(p.musicVolume), effectsVolume: volume(p.effectsVolume), reducedMotion: p.reducedMotion === true, combatText: p.combatText !== false, effectsQuality: p.effectsQuality === 'high' ? 'high' : 'balanced' };
+    const difficultyMode = normalizeDifficultyMode(p.difficultyMode, p.easy);
+    const save = { version: 4, records, storySeen: storyFlags(p.storySeen), captainBuilds: Growth.normalizeBuilds(p.captainBuilds, records), lastLevelId: selected, hero: bounded(p.hero, 1), loadout: bounded(p.loadout, Growth.LOADOUT_COUNT - 1), difficultyMode, easy: difficultyMode === 'relaxed', sound: p.sound !== false, musicVolume: volume(p.musicVolume), effectsVolume: volume(p.effectsVolume), reducedMotion: p.reducedMotion === true, combatText: p.combatText !== false, effectsQuality: p.effectsQuality === 'high' ? 'high' : 'balanced' };
     return project(save, levels);
   }
   function project(save, levels) {
-    for (const [mode, prefix] of [['normal', ''], ['assist', 'easy']]) for (const [field, suffix] of [['stars', 'Stars'], ['best', 'Best'], ['medals', 'Medals']]) {
+    for (const [mode, prefix] of PROJECTIONS) for (const [field, suffix] of [['stars', 'Stars'], ['best', 'Best'], ['medals', 'Medals']]) {
       const key = prefix ? prefix + suffix : field;
       save[key] = levels.map(l => cleanRecord(save.records[l.id]?.[mode])[field]);
     }
@@ -34,16 +44,18 @@
   }
   function capture(save, levels) {
     save.storySeen = storyFlags(save.storySeen);
+    save.difficultyMode = normalizeDifficultyMode(save.difficultyMode, save.easy);
+    save.easy = save.difficultyMode === 'relaxed';
     for (let i = 0; i < levels.length; i++) {
-      const id = levels[i].id, old = save.records[id] || { normal: cleanRecord(), assist: cleanRecord() };
-      for (const [mode, prefix] of [['normal', ''], ['assist', 'easy']]) for (const [field, suffix] of [['stars', 'Stars'], ['best', 'Best'], ['medals', 'Medals']]) {
+      const id = levels[i].id, old = cleanModes(save.records[id]);
+      for (const [mode, prefix] of PROJECTIONS) for (const [field, suffix] of [['stars', 'Stars'], ['best', 'Best'], ['medals', 'Medals']]) {
         const key = prefix ? prefix + suffix : field;
         old[mode][field] = Math.max(old[mode][field], bounded(save[key]?.[i], field === 'best' ? 9999999 : 3));
       }
       save.records[id] = old;
     }
     save.captainBuilds = Growth.normalizeBuilds(save.captainBuilds, save.records);
-    const { stars, best, medals, easyStars, easyBest, easyMedals, ...data } = save;
+    const { stars, best, medals, easyStars, easyBest, easyMedals, expertStars, expertBest, expertMedals, ...data } = save;
     return data;
   }
   function exportSave(save, levels) { return { format: 'dog-squad-save', schema: 1, exportedAt: new Date().toISOString(), data: capture(save, levels) }; }
@@ -54,13 +66,13 @@
     if (envelope.data.version === 4 && (!envelope.data.records || typeof envelope.data.records !== 'object' || Array.isArray(envelope.data.records))) throw new Error('存档缺少行动记录');
     const incoming = normalize(envelope.data, levels), merged = normalize(capture(current, levels), levels);
     for (const [id, value] of Object.entries(incoming.records)) {
-      const old = merged.records[id] || { normal: cleanRecord(), assist: cleanRecord() };
-      for (const mode of ['normal', 'assist']) for (const field of ['stars', 'best', 'medals']) old[mode][field] = Math.max(old[mode][field], value[mode][field]);
+      const old = cleanModes(merged.records[id]);
+      for (const mode of RECORD_MODES) for (const field of ['stars', 'best', 'medals']) old[mode][field] = Math.max(old[mode][field], value[mode][field]);
       merged.records[id] = old;
     }
     merged.storySeen = storyFlags([...merged.storySeen, ...incoming.storySeen]);
     // Preferences follow the imported save, scores are never reduced by import.
-    for (const key of ['hero', 'loadout', 'sound', 'easy', 'musicVolume', 'effectsVolume', 'reducedMotion', 'combatText', 'effectsQuality', 'lastLevelId']) merged[key] = incoming[key];
+    for (const key of ['hero', 'loadout', 'sound', 'difficultyMode', 'easy', 'musicVolume', 'effectsVolume', 'reducedMotion', 'combatText', 'effectsQuality', 'lastLevelId']) merged[key] = incoming[key];
     // Build choices follow the incoming save, but their budget must use the merged
     // achievements. Normalizing incoming builds first would discard valid choices.
     merged.captainBuilds = Growth.normalizeBuilds(envelope.data.captainBuilds, merged.records);
@@ -87,5 +99,5 @@
     storage.setItem(SAVE_KEY, json);
     return json;
   }
-  return { normalize, project, capture, exportSave, importSave, readLocal, writeLocal };
+  return { MODES, normalizeDifficultyMode, difficultyRecordKey, normalize, project, capture, exportSave, importSave, readLocal, writeLocal };
 });

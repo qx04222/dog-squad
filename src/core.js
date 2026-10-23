@@ -5,10 +5,18 @@
   else root.Mochi = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (Content, Builtin, Growth) {
   'use strict';
-  const W = 600, H = 800, PLAYER_Y = 663, MAX_TEAM = 300, MAX_WEAPON = 8;
+  const W = 600, H = 800, PLAYER_Y = 663, MAX_TEAM = 600, MAX_WEAPON = 8;
   const APP_VERSION = Content.APP_VERSION, MAX_PICKUPS = 12, MAX_IMPACTS = 32, MAX_SKILL_EFFECTS = 24;
   const INPUT_BUFFER_WINDOW = .18, PERFECT_DODGE_SHIELD = 12, PERFECT_DODGE_ULTIMATE = 8;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // Mode tuning changes combat pressure, never the level seed or content protocol.
+  const DIFFICULTY_MODES = Object.freeze([
+    {id:'relaxed',name:'轻松',recordKey:'assist',description:'更慢的敌弹、更长的受击保护，轻松带大家回家。',tuning:{initialTeam:20,enemyHp:.68,hurt:.34,invulnerable:.95,shotDamage:1.25,projectileSpeed:.78,bossHp:.64,lateBossHp:1,bossHurt:1,bossInterval:1.38,bossWarning:1.8,crossfireWarning:1.8,summonInterval:1.2}},
+    {id:'standard',name:'标准',recordKey:'normal',description:'均衡火力与闪避，后期首领留出更多反应时间。',tuning:{initialTeam:8,enemyHp:1,hurt:1,invulnerable:.38,shotDamage:1,projectileSpeed:.96,bossHp:1,lateBossHp:.88,bossHurt:.9,bossInterval:1.12,bossWarning:1.25,crossfireWarning:1.5,summonInterval:1.1}},
+    {id:'expert',name:'挑战',recordKey:'expert',description:'更强的机甲与更快的攻势，考验技能和路线搭配。',tuning:{initialTeam:8,enemyHp:1.12,hurt:1.15,invulnerable:.34,shotDamage:1,projectileSpeed:1.07,bossHp:1.12,lateBossHp:1,bossHurt:1,bossInterval:.92,bossWarning:1,crossfireWarning:1.3,summonInterval:.94}}
+  ].map(mode=>Object.freeze({...mode,tuning:Object.freeze(mode.tuning)})));
+  function normalizeDifficultyMode(value,easy=false){return DIFFICULTY_MODES.some(mode=>mode.id===value)?value:easy===true?'relaxed':'standard';}
+  const BOSS_OVERTIME_START = 80, BOSS_OVERTIME_INTERVAL = 2;
   // Content is validated before registration; battle difficulty is independent of catalog index.
   const builtIn = Content.validatePack(Builtin);
   const LEVELS = builtIn.levels.map(level => ({ ...level, packId: builtIn.id }));
@@ -101,7 +109,9 @@
   function createGame(options = {}) {
     const level = Number.isFinite(options.level) ? clamp(Math.floor(options.level), 0, LEVELS.length - 1) : 0;
     const hero = Number.isFinite(options.hero) ? clamp(Math.floor(options.hero), 0, HEROES.length - 1) : 0;
-    const easy = options.easy === true, cfg = LEVELS[level], difficulty = cfg.difficulty;
+    const difficultyMode=normalizeDifficultyMode(options.difficultyMode,options.easy),mode=DIFFICULTY_MODES.find(item=>item.id===difficultyMode).tuning;
+    const easy = difficultyMode === 'relaxed', cfg = LEVELS[level], difficulty = cfg.difficulty;
+    const bossHpScale=mode.bossHp*(difficulty>=4?mode.lateBossHp:1),bossHurtScale=difficulty>=4?mode.bossHurt:1;
     const mechanic = cfg.mechanic || 'standard';
     const loadout = Number.isInteger(options.loadout) ? clamp(options.loadout,0,LOADOUTS.length-1) : 0, kit = LOADOUTS[loadout];
     const profile = Growth.getProfile(options.records, hero, options.captainBuild), training = profile.effects;
@@ -110,8 +120,8 @@
     const events = schedule(level);
     const initialSeed = Number.isFinite(options.seed) ? Math.floor(options.seed) >>> 0 : (437 + level * 99) >>> 0;
     const state = {
-      phase: 'playing', level, levelId:cfg.id, mechanic, difficulty, hero, easy, loadout, captainBuild:profile.build, captainEffects:{...training}, tacticalName:tacticalModule.name, tacticalKind:tacticalModule.kind, tacticalDuration:tacticalModule.cooldown*training.cooldown*(kit.tacticalCooldown||1), energy:kit.energy||20, shield:0, shieldTime:0, focus:0, supportCooldown:0, supportUses:0, dashCharges:2, dashRecharge:0, dashTime:0, dashFrom:170, dashUses:0, facing:1, medals:0, rank:'—', time: 0, distance: 0, x: 170, targetX: 170,
-      team: (easy ? 14 : 8) + difficulty * 4, peakTeam: (easy ? 14 : 8) + difficulty * 4, weapon: 1 + Math.floor(difficulty / 3), kills: 0, score: 0,
+      phase: 'playing', level, levelId:cfg.id, mechanic, difficulty, difficultyMode, hero, easy, loadout, captainBuild:profile.build, captainEffects:{...training}, tacticalName:tacticalModule.name, tacticalKind:tacticalModule.kind, tacticalDuration:tacticalModule.cooldown*training.cooldown*(kit.tacticalCooldown||1), energy:kit.energy||20, shield:0, shieldTime:0, focus:0, supportCooldown:0, supportUses:0, dashCharges:2, dashRecharge:0, dashTime:0, dashFrom:170, dashUses:0, facing:1, medals:0, rank:'—', time: 0, distance: 0, x: 170, targetX: 170,
+      team: mode.initialTeam + difficulty * 4, peakTeam: mode.initialTeam + difficulty * 4, weapon: 1 + Math.floor(difficulty / 3), kills: 0, score: 0,
       cooldown: 0, skillBuffer: 0, tacticalBuffer:0, supportBuffer:0, ultimateBuffer:0, tacticalCooldown:0, tacticalTime:0, tacticalUses:0, ultimateCharge:0, ultimateTime:0, ultimateUses:0,
       invulnerable: 0, flash: 0, shake: 0, entities: [], bullets: [], pickups:[], buffs:{rapid:0,pierce:0,magnet:0}, impacts:[], skillEffects:[],
       particles: [], explosions: [], hazards: [], texts: [], signals: [], boss: null, bossSpawned: false, won: false,
@@ -136,12 +146,12 @@
       state.peakTeam = Math.max(state.peakTeam, state.team);
       if (state.team <= 0) finish(false);
     }
-    function hurt(amount, x = state.x) {
+    function hurt(amount, x = state.x, source = 'enemy') {
       if (state.invulnerable > 0 || state.phase !== 'playing') return;
-      let damage = Math.max(1, Math.round(amount * (easy ? .42 : 1) * kit.hurt * training.hurt * (mechanic === 'overcharge' ? 1.12 : 1)));
+      let damage = Math.max(1, Math.round(amount * mode.hurt * (source==='boss'?bossHurtScale:1) * kit.hurt * training.hurt * (mechanic === 'overcharge' ? 1.12 : 1)));
       if(state.shield>0){const absorbed=Math.min(state.shield,damage);state.shield-=absorbed;damage-=absorbed;floating('护盾 −'+absorbed,x,PLAYER_Y-80,'#71e6dc');if(!damage){state.invulnerable=.15;signal('shield');return;}}
       state.damageTaken += Math.min(damage, state.team); changeTeam(-damage);
-      state.invulnerable = easy ? .85 : .38; state.flash = .24; state.shake = .34;
+      state.invulnerable = mode.invulnerable; state.flash = .24; state.shake = .34;
       state.combo = 0; state.comboTime = 0;
       floating('−' + damage, x, PLAYER_Y - 70, '#ca4660'); explode(x, PLAYER_Y, '#ff8c84', 55); signal('hurt');
     }
@@ -200,8 +210,8 @@
           if (mechanic === 'repairSwarm' && i === event.count) kind = 'repair';
           const baseHp = kind === 'guardian' ? 44 + difficulty * 12 : kind === 'tank' ? 65 + difficulty * 16 : (kind === 'shooter'||kind === 'repair') ? 23 + difficulty * 5 : 12 + difficulty * 3;
           const eliteVariant=difficulty>=3&&(i+w)%13===7?(kind==='tank'||kind==='guardian'?'fortified':'overclocked'):null;
-          const hp = baseHp * (1 + Math.min(10, w) * .16) * (easy ? .75 : 1) * (eliteVariant ? 1.45 : 1), x = 115 + (i % 5) * 92.5;
-          const guardHp=(kind==='guardian'?(24+difficulty*4)*(easy?.75:1):0)+(eliteVariant==='fortified'?Math.max(18,hp*.22):0);
+          const hp = baseHp * (1 + Math.min(10, w) * .16) * mode.enemyHp * (eliteVariant ? 1.45 : 1), x = 115 + (i % 5) * 92.5;
+          const guardHp=(kind==='guardian'?(24+difficulty*4)*mode.enemyHp:0)+(eliteVariant==='fortified'?Math.max(18,hp*.22):0);
           const sizeTier=hp>=145?'titan':hp>=70?'heavy':hp>=30?'standard':'compact',visualScale={compact:.9,standard:1,heavy:1.14,titan:1.28}[sizeTier];
           state.entities.push({ id: nextId++, type: 'enemy', kind, x, baseX: x, y: -45 - Math.floor(i / 5) * 78, hp, maxHp: hp, r: ((kind === 'tank'||kind==='guardian') ? 32 : 23)*visualScale, elite: kind === 'tank'||kind==='guardian', eliteVariant, sizeTier, visualScale, guardHp, maxGuardHp:guardHp, healTimer:3, healing:null, wobble: rand() * 6, hit: 0, shot: 1.4 + rand() * 1.2 });
         }
@@ -210,22 +220,23 @@
         state.entities.push({ id: nextId++, type: 'crate', x: event.x, y: -40, hp, maxHp: hp, r: 35, hit: 0 });
       } else if (event.type === 'crossfire') {
         if (!state.bossSpawned) {
-          state.hazards.push({ x: state.x, width: 68, delay: 1.5, life: .48, hit: false, source: 'crossfire' });
+          state.hazards.push({ x: state.x, width: 68, delay: mode.crossfireWarning, life: .48, hit: false, source: 'crossfire' });
           signal('warning');
         }
       } else if (event.type === 'rock') state.entities.push({ id: nextId++, type: 'rock', x: event.x, y: -45, r: 35, hit: 0 });
       else if(event.type==='pickup')spawnPickup(300,-25,event.guaranteed?'battery':null);
     }
-    function hostile(x, y, target, speed, damage, r = 10) {
+    function hostile(x, y, target, speed, damage, r = 10, source = 'enemy') {
+      speed *= mode.projectileSpeed;
       const flight = Math.max(.3, (PLAYER_Y - y) / speed);
-      state.bullets.push({ x, y, vx: (target - x) / flight, vy: speed, damage, ratio: .055, r, friendly: false, kind:'hostile', charged:r>=13, pierce:0 });
+      state.bullets.push({ x, y, vx: (target - x) / flight, vy: speed, damage, ratio: .055, r, friendly: false, source, kind:'hostile', charged:r>=13, pierce:0 });
     }
     function shoot() {
       const columns = Math.min(11, Math.max(1, Math.ceil(state.team / 4))), over = state.overdrive > 0;
       for (let i = 0; i < columns; i++) {
         const side = i - (columns - 1) / 2;
         const pierce=(kit.pierce||0)+(state.buffs.pierce>0?1:0);
-        state.bullets.push({ x: state.x + side * 15, y: PLAYER_Y - 28 - Math.abs(side) * 2, vy: -780 - state.weapon * 10, vx: state.weapon >= 5 ? side * 3 : 0, damage: (1 + state.team / columns * .17 + (state.weapon - 1) * .42) * HEROES[hero].damage * (kit.damage||1) * (easy ? 1.2 : 1) * (over ? 1.45 : 1) * (state.focus>0?1.5:1), r: 4 + state.weapon * .4, friendly: true, kind:pierce>0?'pierce':kit.splash?'burst':state.buffs.rapid>0?'rapid':over?'overdrive':'pulse',charged: over, pierce, splash:kit.splash||0, hitIds:[] });
+        state.bullets.push({ x: state.x + side * 15, y: PLAYER_Y - 28 - Math.abs(side) * 2, vy: -780 - state.weapon * 10, vx: state.weapon >= 5 ? side * 3 : 0, damage: (1 + state.team / columns * .17 + (state.weapon - 1) * .42) * HEROES[hero].damage * (kit.damage||1) * mode.shotDamage * (over ? 1.45 : 1) * (state.focus>0?1.5:1), r: 4 + state.weapon * .4, friendly: true, kind:pierce>0?'pierce':kit.splash?'burst':state.buffs.rapid>0?'rapid':over?'overdrive':'pulse',charged: over, pierce, splash:kit.splash||0, hitIds:[] });
       }
       signal('shoot');
     }
@@ -393,7 +404,7 @@
       while (cursor < events.length && state.time >= events[cursor].t) spawn(events[cursor++]);
       if (!state.bossSpawned && state.time >= cfg.duration) {
         state.bossSpawned = true;
-        state.boss = { x: 300, y: 142, hp: cfg.bossHp, maxHp: cfg.bossHp, clock: 0, shot: 1.6, beam: 3, summon: 8, stage: 1, hit: 0, volleys: 0 };
+        state.boss = { x: 300, y: 142, hp: cfg.bossHp*bossHpScale, maxHp: cfg.bossHp*bossHpScale, clock: 0, shot: 1.6*mode.bossInterval, beam: 3*mode.bossInterval, summon: 8*mode.summonInterval, stage: 1, hit: 0, volleys: 0 };
         state.cooldown = 0; signal('boss'); state.shake = .5;
       }
       shotTimer -= dt;
@@ -441,26 +452,26 @@
       const boss = state.boss;
       if (boss) {
         boss.clock += dt; boss.hit = Math.max(0, boss.hit - dt);
-        if (boss.stage === 1 && boss.hp < boss.maxHp * .55) { boss.stage = 2; boss.beam = .8; boss.shot = .4; state.shake = .55; explode(boss.x, boss.y, '#ff7db3', 115); signal('rage'); }
+        if (boss.stage === 1 && boss.hp < boss.maxHp * .55) { boss.stage = 2; boss.beam = .8*mode.bossInterval; boss.shot = .4*mode.bossInterval; state.shake = .55; explode(boss.x, boss.y, '#ff7db3', 115); signal('rage'); }
         boss.x = 300 + Math.sin(boss.clock * (boss.stage === 2 ? .95 : .65)) * (115 + difficulty * 3);
         boss.y = 145 + Math.min(170, Math.max(0, boss.clock - 26) * 4);
         boss.shot -= dt; boss.beam -= dt; boss.summon -= dt;
         if (boss.shot <= 0) {
           const count = 5 + Math.floor(difficulty / 2) * 2 + (boss.stage === 2 ? 2 : 0);
-          for (let i = 0; i < count; i++) { const target = 80 + i * 440 / (count - 1) + Math.sin(boss.volleys * 1.7) * 28; if (Math.abs(target - [145, 300, 455][boss.volleys % 3]) < 68) continue; hostile(boss.x, boss.y + 38, target, 205 + difficulty * 10 + boss.stage * 18, 7 + difficulty * 2, 9 + difficulty * .3); }
-          hostile(boss.x, boss.y + 48, state.x, 290 + difficulty * 12, 10 + difficulty * 2, 13);
-          boss.shot = (easy ? 1.2 : 1) * (boss.stage === 2 ? 1.35 : 1.85) - difficulty * .035; boss.volleys++; signal('bossShot');
+          for (let i = 0; i < count; i++) { const target = 80 + i * 440 / (count - 1) + Math.sin(boss.volleys * 1.7) * 28; if (Math.abs(target - [145, 300, 455][boss.volleys % 3]) < 68) continue; hostile(boss.x, boss.y + 38, target, 205 + difficulty * 10 + boss.stage * 18, 7 + difficulty * 2, 9 + difficulty * .3,'boss'); }
+          hostile(boss.x, boss.y + 48, state.x, 290 + difficulty * 12, 10 + difficulty * 2, 13,'boss');
+          boss.shot = mode.bossInterval * ((boss.stage === 2 ? 1.35 : 1.85) - difficulty * .035); boss.volleys++; signal('bossShot');
         }
         if (boss.beam <= 0) {
           const xs = [state.x]; if (difficulty >= 4 && boss.stage === 2) xs.push(state.x < 300 ? 445 : 155);
-          xs.forEach(x => state.hazards.push({ x, width: difficulty >= 5 ? 78 : 68, delay: easy ? 1.5 : 1.1, life: .48, hit: false }));
-          boss.beam = boss.stage === 2 ? 3.5 : 5; signal('warning');
+          xs.forEach(x => state.hazards.push({ x, width: difficulty >= 5 ? 78 : 68, delay: mode.bossWarning, life: .48, hit: false, source:'boss' }));
+          boss.beam = (boss.stage === 2 ? 3.5 : 5)*mode.bossInterval; signal('warning');
         }
-        if (boss.summon <= 0 && difficulty >= 2) { spawn({ type: 'wave', count: 4 + difficulty, wave: 3 + difficulty }); boss.summon = boss.stage === 2 ? 9 : 13; signal('reinforce'); }
+        if (boss.summon <= 0 && difficulty >= 2) { spawn({ type: 'wave', count: 4 + difficulty, wave: 3 + difficulty }); boss.summon = (boss.stage === 2 ? 9 : 13)*mode.summonInterval; signal('reinforce'); }
       }
       for (const h of state.hazards) {
         if (h.delay > 0) h.delay -= dt;
-        else { h.life -= dt; if (!h.hit && Math.abs(state.x - h.x) < h.width / 2 + 22) { h.hit = true; hurt(Math.max(16 + difficulty * 3, Math.ceil(state.team * .18))); } }
+        else { h.life -= dt; if (!h.hit && Math.abs(state.x - h.x) < h.width / 2 + 22) { h.hit = true; hurt(Math.max(16 + difficulty * 3, Math.ceil(state.team * .18)),state.x,h.source); } }
       }
       const targets = state.entities.filter(e => !e.dead && !(e.type === 'gate' && e.used)).sort((a, b) => b.y - a.y);
       for (const b of state.bullets) {
@@ -475,7 +486,7 @@
             const dealt=damageBoss(b.damage,b.kind||'pulse');gainUltimate(Math.min(.65,.12+dealt*.008));b.dead = true;
             if(state.phase!=='playing')break;
           }
-        } else if (oldY - b.r < PLAYER_Y + 22 && b.y + b.r > PLAYER_Y - 22 && Math.abs(b.x - state.x) < b.r + 24) { b.dead = true; hurt(Math.max(b.damage, Math.ceil(state.team * (b.ratio || .055)))); }
+        } else if (oldY - b.r < PLAYER_Y + 22 && b.y + b.r > PLAYER_Y - 22 && Math.abs(b.x - state.x) < b.r + 24) { b.dead = true; hurt(Math.max(b.damage, Math.ceil(state.team * (b.ratio || .055))),state.x,b.source); }
         if (b.y < -90 || b.y > 840 || b.x < -40 || b.x > W + 40) b.dead = true;
       }
       for (const p of state.particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; p.life -= dt; }
@@ -492,7 +503,11 @@
       state.impacts=state.impacts.filter(e=>e.life>0).slice(-MAX_IMPACTS);
       state.skillEffects=state.skillEffects.filter(e=>e.life>0).slice(-MAX_SKILL_EFFECTS);
       state.texts = state.texts.filter(t => t.life > 0).slice(-18);
-      if (boss && boss.clock > 80) hurt(20 + difficulty * 3);
+      // A visible warning precedes timed overtime pulses; damage never runs once per render frame.
+      if(boss && boss.clock + 1e-8 >= BOSS_OVERTIME_START){
+        if(!boss.overtimeWarned){boss.overtimeWarned=true;boss.overtimeNext=BOSS_OVERTIME_START+BOSS_OVERTIME_INTERVAL;floating('首领过载 · 2 秒后脉冲',300,230,'#ca4660');signal('bossOvertime',{startsIn:BOSS_OVERTIME_INTERVAL,interval:BOSS_OVERTIME_INTERVAL});}
+        if(boss.clock + 1e-8 >= boss.overtimeNext){boss.overtimeNext+=BOSS_OVERTIME_INTERVAL;hurt(20+difficulty*3,state.x,'boss');}
+      }
       state.signals = state.signals.slice(-100);
     }
     function clearBuffers(){state.skillBuffer=0;state.tacticalBuffer=0;state.supportBuffer=0;state.ultimateBuffer=0;}
@@ -501,7 +516,7 @@
     function drainSignals() { return state.signals.splice(0); }
     function snapshot() {
       const projectile=b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy,r:b.r,kind:b.kind||'pulse',charged:!!b.charged,pierce:b.pierce||0});
-      return { phase: state.phase, level, levelId:cfg.id, mechanic, difficulty, hero, easy, loadout, captainBuild:{nodes:[...state.captainBuild.nodes],tactical:state.captainBuild.tactical},captainEffects:{...training},tacticalName:state.tacticalName,tacticalKind:state.tacticalKind,tacticalDuration:state.tacticalDuration,energy:state.energy, shield:state.shield, shieldTime:state.shieldTime, focus:state.focus, supportCooldown:state.supportCooldown, supportUses:state.supportUses, dashCharges:state.dashCharges, dashRecharge:state.dashRecharge, dashUses:state.dashUses,
+      return { phase: state.phase, level, levelId:cfg.id, mechanic, difficulty, difficultyMode, hero, easy, loadout, captainBuild:{nodes:[...state.captainBuild.nodes],tactical:state.captainBuild.tactical},captainEffects:{...training},tacticalName:state.tacticalName,tacticalKind:state.tacticalKind,tacticalDuration:state.tacticalDuration,energy:state.energy, shield:state.shield, shieldTime:state.shieldTime, focus:state.focus, supportCooldown:state.supportCooldown, supportUses:state.supportUses, dashCharges:state.dashCharges, dashRecharge:state.dashRecharge, dashUses:state.dashUses,
         tacticalCooldown:+state.tacticalCooldown.toFixed(2),tacticalTime:+state.tacticalTime.toFixed(2),tacticalUses:state.tacticalUses,ultimateCharge:+state.ultimateCharge.toFixed(2),ultimateTime:+state.ultimateTime.toFixed(2),ultimateUses:state.ultimateUses,buffs:{...state.buffs},
         medals:state.medals, rank:state.rank, time: +state.time.toFixed(2), team: state.team, peakTeam: state.peakTeam, weapon: state.weapon, kills: state.kills, score: state.score, stars: state.stars, x: +state.x.toFixed(2), cooldown: +state.cooldown.toFixed(2), bossHp: state.boss ? Math.max(0, +state.boss.hp.toFixed(2)) : null, boss: state.boss ? { x: state.boss.x, y: state.boss.y, stage: state.boss.stage, clock: state.boss.clock, maxHp: state.boss.maxHp } : null,
         entities: state.entities.map(e => ({ id:e.id,type: e.type, kind: e.kind, group: e.group, x: e.x, y: e.y, value: e.value, op: e.op, hp: e.hp,maxHp:e.maxHp, hpRatio:e.maxHp?clamp(e.hp/e.maxHp,0,1):null,damageRatio:e.maxHp?1-clamp(e.hp/e.maxHp,0,1):0, guardHp:e.guardHp,maxGuardHp:e.maxGuardHp||0, used: e.used,sizeTier:e.sizeTier,visualScale:e.visualScale||1,elite:!!e.elite,eliteVariant:e.eliteVariant||null,r:e.r })),
@@ -509,5 +524,5 @@
     }
     return { state, step, skill, requestSkill, tactical, requestTactical, ultimate, requestUltimate, support, requestSupport, dash, pause, resume, drainSignals, snapshot };
   }
-  return { W, H, PLAYER_Y, MAX_TEAM, MAX_WEAPON, APP_VERSION, LEVELS, HEROES, LOADOUTS, ENEMIES, PICKUPS, registerPack, missionResults, createGame, sanitizeSave, clamp };
+  return { W, H, PLAYER_Y, MAX_TEAM, MAX_WEAPON, DIFFICULTY_MODES, normalizeDifficultyMode, APP_VERSION, LEVELS, HEROES, LOADOUTS, ENEMIES, PICKUPS, registerPack, missionResults, createGame, sanitizeSave, clamp };
 });

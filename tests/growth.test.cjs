@@ -116,8 +116,8 @@ test('Ramen arc damages six targets and clears only nearby hostile projectiles',
   game.state.bullets = []; const enemy = game.state.entities[0], oldY = enemy.y; game.step(.05); assert.ok(enemy.y - oldY > 2, 'alternate module does not accidentally inherit time-field slow');
 });
 test('Ramen rescue adds capped team and shield without secretly enabling time-field vulnerability', () => {
-  const game = M.createGame({ captainBuild: buildFor(0, 'rescue') }); game.state.team = 295; assert.equal(game.tactical(), true);
-  assert.equal(game.state.team, 300); assert.equal(game.state.shield, 30); assert.equal(game.state.shieldTime, 4);
+  const game = M.createGame({ captainBuild: buildFor(0, 'rescue') }); game.state.team = M.MAX_TEAM - 5; assert.equal(game.tactical(), true);
+  assert.equal(game.state.team, M.MAX_TEAM); assert.equal(game.state.shield, 30); assert.equal(game.state.shieldTime, 4);
   assert.equal(hit(game), 100); assert.equal(game.state.tacticalKind, 'rescueBeacon');
 });
 test('Bing barrage and bulwark implement distinct sustained and defensive choices', () => {

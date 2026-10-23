@@ -6,7 +6,7 @@
   'use strict';
   // The public product version restarted at 1.0.0. Content compatibility stays
   // monotonic so packs signed for the pre-release 4.x-6.x builds remain valid.
-  const APP_VERSION = '1.1.0';
+  const APP_VERSION = '1.2.0';
   const CONTENT_API_VERSION = '6.0.0';
   const ID = /^[a-z][a-z0-9-]{1,63}$/;
   const VERSION = /^(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})$/;

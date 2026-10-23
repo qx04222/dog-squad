@@ -5,10 +5,15 @@
     try { for (const p of await window.dogDesktop.getPacks()) { try { window.Mochi.registerPack(p); contentPacks.push(p); } catch(error){startupWarnings.push('章节 '+(p.title||p.id)+' 未载入：'+error.message);} } }
     catch (error) { startupWarnings.push('扩展章节未载入，内置故事仍可游玩。' + error.message); }
   }
-  const { W, H, PLAYER_Y, LEVELS, HEROES, LOADOUTS, ENEMIES, PICKUPS, missionResults, createGame, sanitizeSave, clamp } = window.Mochi;
+  const { W, H, PLAYER_Y, LEVELS, HEROES, LOADOUTS, ENEMIES, PICKUPS, DIFFICULTY_MODES, normalizeDifficultyMode, missionResults, createGame, sanitizeSave, clamp } = window.Mochi;
   const $ = id => document.getElementById(id);
   const VFX = window.DogVFX, Motion = window.DogMotion, Growth = window.DogProgression, Expedition = window.DogExpeditionUI, Story = window.DogStoryUI;
   const canvas = $('game-canvas'), ctx = canvas.getContext('2d');
+  // Viewport overlays must not inherit the battlefield's isolated stacking context.
+  for(const id of ['pause-overlay','result-overlay']) { document.body.append($(id));$(id).setAttribute('role','dialog');$(id).setAttribute('aria-modal','true'); }
+  $('pause-overlay').setAttribute('aria-label','行动暂停');$('result-overlay').setAttribute('aria-labelledby','result-title');
+  function overlayActive(active) { document.querySelector('.app-shell').inert=active;document.body.classList.toggle('overlay-active',active); }
+
   const systemReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let reducedMotion = systemReducedMotion;
   const SAVE_KEY = 'dog-squad-v4';
@@ -25,7 +30,7 @@
         const raw = JSON.parse(disk.json), data = raw.format === 'dog-squad-save' ? raw.data : raw;
         if (!loaded.source) save = window.DogProgress.normalize(data, LEVELS);
         else {
-          const preferences = Object.fromEntries(['hero','loadout','easy','sound','musicVolume','effectsVolume','reducedMotion','combatText','effectsQuality','lastLevelId','captainBuilds'].map(key=>[key,save[key]]));
+          const preferences = Object.fromEntries(['hero','loadout','easy','difficultyMode','sound','musicVolume','effectsVolume','reducedMotion','combatText','effectsQuality','lastLevelId','captainBuilds'].map(key=>[key,save[key]]));
           save = window.DogProgress.importSave(JSON.stringify({format:'dog-squad-save',schema:1,data}), save, LEVELS);
           Object.assign(save,preferences);
         }
@@ -239,7 +244,7 @@
     const lead = p(s.x, PLAYER_Y - 145);
     rounded(ctx, lead.x - 28, lead.y - 13, 56, 25, 13, '#fff9e7ed', '#b8c7a8', 1);
     text(ctx, s.team, lead.x, lead.y, 20, '#3c765d', 800);
-    if (s.team > 54) text(ctx, '军团 ' + s.team, p(s.x, PLAYER_Y + 108).x, p(s.x, PLAYER_Y + 108).y, 10, '#6e826a');
+    if (s.team > 54) { const tag=p(s.x, PLAYER_Y+108);rounded(ctx,tag.x-37,tag.y-10,74,21,10,'#183e49','#8bb4a6',1);text(ctx,'军团 '+s.team,tag.x,tag.y,11,'#fff8dc',750); }
   }
   function bullets(s, t, hostileOnly=false) {
     let dense=false,ordinal=0;if(!hostileOnly&&save.effectsQuality!=='high'){let count=0;for(const bullet of s.bullets)if(bullet.friendly&&++count>72){dense=true;break;}}
@@ -321,9 +326,11 @@
     c.setAttribute('aria-label',`${HEROES[hero].name}，${HEROES[hero].kind}行动队长`);
     document.querySelectorAll('[data-avatar]').forEach(a=>{const ac=a.getContext('2d'),n=Number(a.dataset.avatar),w=Number(a.dataset.logicalWidth||a.width),h=Number(a.dataset.logicalHeight||a.height);a.dataset.logicalWidth=w;a.dataset.logicalHeight=h;a.width=Math.round(w*dpr);a.height=Math.round(h*dpr);ac.setTransform(dpr,0,0,dpr,0,0);ac.imageSmoothingQuality='high';portrait(ac,n,w,h,true);});
   }
+  function difficultyConfig(value=save.difficultyMode) { return DIFFICULTY_MODES.find(mode=>mode.id===normalizeDifficultyMode(value,save.easy)); }
+  function modeArrays(value=save.difficultyMode) { const key=difficultyConfig(value).recordKey;return key==='assist'?{stars:save.easyStars,best:save.easyBest,medals:save.easyMedals}:key==='expert'?{stars:save.expertStars,best:save.expertBest,medals:save.expertMedals}:{stars:save.stars,best:save.best,medals:save.medals}; }
   function updateMenu() {
-    const starsForMode=save.easy?save.easyStars:save.stars, bestForMode=save.easy?save.easyBest:save.best;
-    document.querySelectorAll('[data-level]').forEach(b => { const i = Number(b.dataset.level); b.hidden = actFor(LEVELS[i]).key !== activeAct; b.classList.toggle('selected', i === level); b.setAttribute('aria-pressed', String(i === level)); const stars = b.querySelector('.level-stars'); stars.textContent = '★'.repeat(starsForMode[i]) + '☆'.repeat(3 - starsForMode[i])+(starsForMode[i]?' / '+['C','B','A','S'][(save.easy?save.easyMedals:save.medals)[i]]:''); stars.classList.toggle('earned', starsForMode[i] > 0); stars.setAttribute('aria-label', `${starsForMode[i]} 星`); });
+    const mode=difficultyConfig(), selectedRecords=modeArrays(), starsForMode=selectedRecords.stars, bestForMode=selectedRecords.best;
+    document.querySelectorAll('[data-level]').forEach(b => { const i = Number(b.dataset.level); b.hidden = actFor(LEVELS[i]).key !== activeAct; b.classList.toggle('selected', i === level); b.setAttribute('aria-pressed', String(i === level)); const stars = b.querySelector('.level-stars'); stars.textContent = '★'.repeat(starsForMode[i]) + '☆'.repeat(3 - starsForMode[i])+(starsForMode[i]?' / '+['C','B','A','S'][selectedRecords.medals[i]]:''); stars.classList.toggle('earned', starsForMode[i] > 0); stars.setAttribute('aria-label', `${starsForMode[i]} 星`); });
     document.querySelectorAll('[data-hero]').forEach(b => { const selected = Number(b.dataset.hero) === hero; b.classList.toggle('selected', selected); b.setAttribute('aria-pressed', String(selected)); });
     $('hero-name').replaceChildren(document.createTextNode(HEROES[hero].name)); const sm = document.createElement('small'); sm.textContent = HEROES[hero].kind; $('hero-name').append(sm);
     $('hero-trait').textContent = HEROES[hero].trait;
@@ -340,12 +347,15 @@
     if(!game){$('radio-text').textContent=LEVELS[level].intro;updateObjectives();}
     $('island-tag').textContent = `OPERATION ${String(level + 1).padStart(2, '0')} · ${LEVELS[level].name}`;
     $('island-subtitle').textContent = LEVELS[level].subtitle;
-    $('campaign-note').textContent = `${save.easy ? '辅助' : '标准'}行动 · ${LEVELS[level].tag} · ${(save.easy?14:8)+LEVELS[level].difficulty*4} 初始兵力`;
+    $('campaign-note').textContent = `${mode.name}行动 · ${LEVELS[level].tag} · ${mode.tuning.initialTeam+LEVELS[level].difficulty*4} 初始兵力`;
     $('star-target').textContent = `2 / 3 星撤离： ${LEVELS[level].star2} / ${LEVELS[level].star3} 兵力`; 
     $('personal-best').textContent = bestForMode[level] ? `BEST ${bestForMode[level].toLocaleString()}` : 'BEST —';
     $('easy-mode').checked = save.easy;
+    document.querySelectorAll('[name="difficulty"]').forEach(input=>{input.checked=input.value===save.difficultyMode;});
+    $('difficulty-description').textContent=mode.description+' · 成绩独立保存';
+    $('battle-mode').textContent=mode.name;
     const act=acts.find(a=>a.key===activeAct), actLevels=LEVELS.filter(l=>actFor(l).key===activeAct);
-    const completed=l=>(save.records[l.id]?.normal.stars||save.records[l.id]?.assist.stars||0)>0;
+    const completed=l=>['normal','assist','expert'].some(mode=>(save.records[l.id]?.[mode]?.stars||0)>0);
     $('act-subtitle').textContent=act.subtitle; $('act-synopsis').textContent=act.synopsis;
     $('act-progress').textContent=`${actLevels.filter(completed).length} / ${actLevels.length} 行动完成`;
     $('campaign-progress').textContent=`${LEVELS.filter(completed).length} / ${LEVELS.length}`;
@@ -353,11 +363,11 @@
     $('start-btn').firstChild.textContent=completed(LEVELS[level])?'再玩一次':LEVELS.some(completed)?'继续冒险':'出发！';
     $('current-chapter-name').textContent=actFor(LEVELS[level]).title;
     $('current-operation-name').textContent=`${String(level+1).padStart(2,'0')} · ${LEVELS[level].name}`;
-    $('current-operation-meta').textContent=`${actLevels.filter(completed).length} / ${actLevels.length} 行动完成 · ${save.easy?'辅助':'标准'}模式`;
+    $('current-operation-meta').textContent=`${actLevels.filter(completed).length} / ${actLevels.length} 行动完成 · ${mode.name}模式`;
     $('resume-note').textContent=`${actFor(LEVELS[level]).title} · ${LEVELS[level].name}`;
     updatePortraits();
   }
-  function disableSelection(disabled) { document.querySelectorAll('[data-level], [data-act], [data-hero], [data-loadout], #easy-mode, #campaign-btn, #current-mission-btn, #captain-btn, #equipment-btn, #story-btn').forEach(b => { b.disabled = disabled; }); }
+  function disableSelection(disabled) { document.querySelectorAll('[data-level], [data-act], [data-hero], [data-loadout], [name="difficulty"], #easy-mode, #campaign-btn, #current-mission-btn, #captain-btn, #equipment-btn, #story-btn').forEach(b => { b.disabled = disabled; }); }
   function toast(message, ms = 3600) { clearTimeout(toastTimer); $('scene-toast').textContent = message; $('scene-toast').classList.add('visible'); toastTimer = setTimeout(() => $('scene-toast').classList.remove('visible'), ms); }
   function hideToast() { clearTimeout(toastTimer); $('scene-toast').classList.remove('visible'); }
   function updateObjectives(){
@@ -380,29 +390,29 @@
     if(startRequest!==null)return;const ticket=++navigationEpoch;startRequest=ticket;
     try {await terminalFlush;if(ticket!==navigationEpoch)return;await setNativeBattle(true);if(ticket!==navigationEpoch)return;}
     catch(error){toast(error.message,6000);return;}finally{if(startRequest===ticket)startRequest=null;}
-    radioIndex=0;resultRecorded=false;victoryStarted=null;pointsBefore=captainProfile().points;shotMotion=0;moveMotion=0;bossEntrance=0;bossStageSeen=0;bossTransition=1;$('skip-celebration').hidden=true;save.lastLevelId=LEVELS[level].id;persist();game = createGame({ level, hero, easy: save.easy, loadout:save.loadout, captainBuild:captainProfile().build, records:save.records, seed:crypto.getRandomValues(new Uint32Array(1))[0] }); resultShown = false; pointerX = null; pointerInput.clear(); keys.clear(); skillPulse = 0; lastFrame = performance.now();
-    $('combo-hud').hidden = false; $('lobby').hidden = true; $('game-hud').hidden = false; $('play-bottom').hidden = false; $('pause-overlay').hidden = true; $('result-overlay').hidden = true; $('boss-hud').hidden = true;
+    radioIndex=0;resultRecorded=false;victoryStarted=null;pointsBefore=captainProfile().points;shotMotion=0;moveMotion=0;bossEntrance=0;bossStageSeen=0;bossTransition=1;$('skip-celebration').hidden=true;save.lastLevelId=LEVELS[level].id;persist();game = createGame({ level, hero, difficultyMode:save.difficultyMode, easy: save.easy, loadout:save.loadout, captainBuild:captainProfile().build, records:save.records, seed:crypto.getRandomValues(new Uint32Array(1))[0] }); resultShown = false; pointerX = null; pointerInput.clear(); keys.clear(); skillPulse = 0; lastFrame = performance.now();
+    overlayActive(false);$('combo-hud').hidden = false; $('lobby').hidden = true; $('game-hud').hidden = false; $('play-bottom').hidden = false; $('pause-overlay').hidden = true; $('result-overlay').hidden = true; $('boss-hud').hidden = true;
     document.body.classList.add('battle-active');$('game-frame').classList.add('playing');document.querySelector('.app-shell').classList.add('in-battle'); $('stage-name').textContent = LEVELS[level].name; disableSelection(true);$('radio-text').textContent=LEVELS[level].intro; updateHud(); audio.init(); toast(LEVELS[level].intro, 5000); canvas.focus({ preventScroll: true });if(innerWidth<=620)requestAnimationFrame(()=>scrollTo({top:0,behavior:'instant'}));
   }
   function home() {
-    navigationEpoch++;startRequest=null;
+    navigationEpoch++;startRequest=null;overlayActive(false);
     terminalFlush=Promise.resolve(terminalFlush).then(()=>setNativeBattle(false)).catch(()=>{});victoryStarted=null;resultRecorded=false;$('skip-celebration').hidden=true;document.body.classList.remove('battle-active');game=null;activeAct=actFor(LEVELS[level]).key;keys.clear(); pointerX = null; pointerInput.clear(); hideToast();
     $('combo-hud').hidden = true; $('lobby').hidden = false; $('game-hud').hidden = true; $('play-bottom').hidden = true; $('boss-hud').hidden = true; $('pause-overlay').hidden = true; $('result-overlay').hidden = true; $('game-frame').classList.remove('playing'); document.querySelector('.app-shell').classList.remove('in-battle');disableSelection(false); updateMenu();
   }
   function homeToMap() { home(); $('campaign-btn').click(); }
   function pause(reason = '') {
     if (!game || !game.pause()) return;
-    audio.suspend();keys.clear(); pointerX = null; pointerInput.clear(); hideToast(); $('pause-overlay').hidden = false; $('pause-reason').textContent = reason || '战场状态已冻结，随时可以继续。'; $('resume-btn').focus({ preventScroll: true });
+    audio.suspend();keys.clear(); pointerX = null; pointerInput.clear(); hideToast(); $('pause-overlay').hidden = false;overlayActive(true); $('pause-reason').textContent = reason || '战场状态已冻结，随时可以继续。'; $('resume-btn').focus({ preventScroll: true });
   }
   function resume() {
     if (!game || !game.resume()) return;
-    $('pause-overlay').hidden = true; keys.clear(); pointerX = null; lastFrame = performance.now(); audio.init(); canvas.focus({ preventScroll: true });
+    $('pause-overlay').hidden = true;overlayActive(false); keys.clear(); pointerX = null; lastFrame = performance.now(); audio.init(); canvas.focus({ preventScroll: true });
   }
   function recordResult() {
     if(resultRecorded||!game)return;resultRecorded=true;const s=game.state;
     keys.clear();pointerX=null;pointerInput.clear();hideToast();
     if(s.phase==='won'){
-      const stars=s.easy?save.easyStars:save.stars,best=s.easy?save.easyBest:save.best,medals=s.easy?save.easyMedals:save.medals;
+      const {stars,best,medals}=modeArrays(s.difficultyMode);
       stars[level]=Math.max(stars[level],s.stars);best[level]=Math.max(best[level],s.score);medals[level]=Math.max(medals[level],s.medals);
       save.lastLevelId=LEVELS[Math.min(level+1,LEVELS.length-1)].id;nativeResultPending=!!window.dogDesktop;terminalFlush=Promise.resolve(persist({immediate:true})).then(()=>setNativeBattle(false)).catch(()=>{}).finally(()=>{nativeResultPending=false;});
       victoryStarted=ambient;$('game-hud').hidden=true;$('combo-hud').hidden=true;$('play-bottom').hidden=true;$('boss-hud').hidden=true;$('skip-celebration').hidden=false;$('skip-celebration').focus({preventScroll:true});
@@ -410,7 +420,7 @@
   }
   function showResult(instant=false) {
     if (resultShown || !game) return; resultShown = true;$('skip-celebration').hidden=true;
-    const s = game.state;if(s.phase==='won'&&(instant||reducedMotion))victoryStarted=ambient-Motion.ARCHIVE_SETTLE_TIME;hideToast(); $('play-bottom').hidden = true; $('result-overlay').hidden = false; $('boss-hud').hidden = true; $('game-frame').classList.remove('playing');
+    const s = game.state;if(s.phase==='won'&&(instant||reducedMotion))victoryStarted=ambient-Motion.ARCHIVE_SETTLE_TIME;hideToast(); $('play-bottom').hidden = true; $('result-overlay').hidden = false;overlayActive(true); $('boss-hud').hidden = true; $('game-frame').classList.remove('playing');
     const won = s.phase === 'won';
     $('result-kicker').textContent = won ? '抵达！' : '再挑战';
     $('result-title').textContent = won ? (LEVELS[level].id==='daybreak-48' ? '我们到家啦！' : '好样的，搭档！') : '再来一次吧';
@@ -421,6 +431,8 @@
     $('result-team').textContent = s.team; $('result-kills').textContent = s.kills; $('result-score').textContent = s.score.toLocaleString();
     $('result-next').firstChild.textContent = won ? (level < LEVELS.length-1 ? '下一站' : '回到地图') : '再来一次';
     $('result-retry').hidden = !won;
+    $('result-difficulty').hidden=won;
+    $('result-mode').textContent=difficultyConfig(s.difficultyMode).name;
 
     $('result-growth').hidden=true;$('result-growth').textContent='';
     Expedition.renderDebrief({won,stars:s.stars,rank:s.rank,instant:instant||reducedMotion});
@@ -460,7 +472,7 @@
       const beforeX=game.state.x;game.step(dt, { axis, x: axis ? undefined : pointerX });
       moveMotion=clamp((game.state.x-beforeX)/Math.max(.001,dt*420),-1,1);shotMotion=Math.max(0,shotMotion-dt*7);if(game.state.boss){bossEntrance=Math.min(1,bossEntrance+dt/.9);if(game.state.boss.stage!==bossStageSeen){bossStageSeen=game.state.boss.stage;bossTransition=0;}bossTransition=Math.min(1,bossTransition+dt/.65);}
       skillPulse = Math.max(0, skillPulse - dt);
-      for (const e of game.drainSignals()) { audio.effect(e.type,e);if(e.type==='shoot')shotMotion=1;if(e.type==='perfectDodge'){audio.effect('pickup');toast('完美闪避 / 护盾 +12 · 终极能量 +8%',1500);}if(e.type==='pickup')toast('强化接入 / '+(e.name||PICKUPS[e.kind]?.name||'战场芯片'),1800);if(e.type==='tactical')toast(game.state.tacticalName||HEROES[hero].tactical,1300);if(e.type==='ultimate')toast('终极释放 / '+HEROES[hero].ultimate,2200); if (e.type === 'skill') skillPulse = 1.5; if (e.type === 'boss') toast(`${LEVELS[level].boss}已锁定 / 躲开红色预警。`, 2800); if(e.type==='rage')toast('第二阶段 · BOSS 狂暴！',1800);if(e.type==='overdrive')toast('12 连击 / 火力过载',1400);if(e.type==='reinforce')toast('敌方增援抵达！',1400); }
+      for (const e of game.drainSignals()) { audio.effect(e.type,e);if(e.type==='shoot')shotMotion=1;if(e.type==='perfectDodge'){audio.effect('pickup');toast('完美闪避 / 护盾 +12 · 终极能量 +8%',1500);}if(e.type==='pickup')toast('强化接入 / '+(e.name||PICKUPS[e.kind]?.name||'战场芯片'),1800);if(e.type==='tactical')toast(game.state.tacticalName||HEROES[hero].tactical,1300);if(e.type==='ultimate')toast('终极释放 / '+HEROES[hero].ultimate,2200); if (e.type === 'skill') skillPulse = 1.5; if (e.type === 'boss') toast(`${LEVELS[level].boss}已锁定 / 躲开红色预警。`, 2800); if(e.type==='bossOvertime')toast('首领过载 · 2 秒后开始脉冲！',3800);if(e.type==='rage')toast('第二阶段 · BOSS 狂暴！',1800);if(e.type==='overdrive')toast('12 连击 / 火力过载',1400);if(e.type==='reinforce')toast('敌方增援抵达！',1400); }
       const messages=LEVELS[level].transmissions;
       if(radioIndex<messages.length&&game.state.time>LEVELS[level].duration*messages[radioIndex].at){const m=messages[radioIndex++], message=m.speaker+'：'+m.text;$('radio-text').textContent=message;toast(message,5000);}
 
@@ -500,6 +512,9 @@
   canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!pointerInput.dragging()&&game)pointerX=game.state.x;});
   document.addEventListener('keydown', e => {
     if (document.querySelector('dialog[open]')) return;
+    const overlay=['pause-overlay','result-overlay'].map($).find(node=>!node.hidden);
+    if(overlay&&e.key==='Tab'){const controls=[...overlay.querySelectorAll('button,summary,[tabindex="0"]')].filter(node=>!node.disabled&&node.checkVisibility());const first=controls[0],last=controls.at(-1);if(controls.length&&((e.shiftKey&&document.activeElement===first)||(!e.shiftKey&&document.activeElement===last)||!controls.includes(document.activeElement))){e.preventDefault();(e.shiftKey?last:first).focus();}return;}
+
     if(game?.state.phase==='won'&&!resultShown&&['Escape','Enter'].includes(e.key)){e.preventDefault();recordResult();showResult(true);return;}
     if (e.key === 'Escape' || e.key.toLowerCase() === 'p') { if (game?.state.phase === 'playing') { e.preventDefault(); pause(); } else if (game?.state.phase === 'paused') { e.preventDefault(); resume(); } return; }
     if (!game || game.state.phase !== 'playing') return;
@@ -534,7 +549,10 @@
   $('tactical-btn').addEventListener('click',()=>game?.requestTactical());$('ultimate-btn').addEventListener('click',()=>game?.requestUltimate());
   document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { if (game) return; level = Number(b.dataset.level);save.lastLevelId=LEVELS[level].id;persist(); updateMenu(); audio.init(); audio.tone(523, .1, .025); }));
   document.querySelectorAll('[data-hero]').forEach(b => b.addEventListener('click', () => { if (game) return; hero = Number(b.dataset.hero); save.hero = hero; persist(); updateMenu(); audio.init(); audio.tone(659, .1, .025); }));
-  $('easy-mode').addEventListener('change', () => { save.easy = $('easy-mode').checked; persist(); updateMenu(); });
+  function selectDifficulty(value) { if(game)return;save.difficultyMode=normalizeDifficultyMode(value);save.easy=save.difficultyMode==='relaxed';persist();updateMenu(); }
+  document.querySelectorAll('[name="difficulty"]').forEach(input=>input.addEventListener('change',()=>{if(input.checked)selectDifficulty(input.value);}));
+  $('easy-mode').addEventListener('change',()=>selectDifficulty($('easy-mode').checked?'relaxed':'standard'));
+  $('result-difficulty').addEventListener('click',()=>{home();$('difficulty-picker').scrollIntoView({block:'center'});document.querySelector('[name="difficulty"]:checked').focus({preventScroll:true});});
   function updateSoundButton() { $('sound-btn').setAttribute('aria-pressed', String(save.sound)); $('sound-btn').setAttribute('aria-label', save.sound ? '关闭声音' : '开启声音'); $('sound-btn').querySelector('use').setAttribute('href', save.sound ? '#i-volume' : '#i-mute'); }
   $('sound-btn').addEventListener('click', () => { save.sound = !save.sound; persist(); updateSoundButton(); if (save.sound) { audio.init(); audio.tone(659, .12, .025); } else audio.suspend(); });
   $('fullscreen-btn').addEventListener('click', async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.querySelector('.app-shell').requestFullscreen) await document.querySelector('.app-shell').requestFullscreen(); else toast('可以使用浏览器菜单进入全屏模式。'); } catch { toast('当前浏览器未开启全屏，可使用浏览器菜单。'); } });
@@ -566,7 +584,7 @@
   }
   function isActiveBattle(){return game&&['playing','paused'].includes(game.state.phase);}
   function renderJournal(){
-    const unlocked=l=>(save.records[l.id]?.normal.stars||save.records[l.id]?.assist.stars||0)>0;
+    const unlocked=l=>['normal','assist','expert'].some(mode=>(save.records[l.id]?.[mode]?.stars||0)>0);
     $('journal-summary').textContent=`已归档 ${LEVELS.filter(unlocked).length} / ${LEVELS.length} 份记录。完成行动后解锁，辅助模式也可以收集。`;
     $('journal-list').innerHTML=LEVELS.map((l,i)=>`<button data-journal="${i}" ${unlocked(l)?'':'disabled'}><small>${String(i+1).padStart(2,'0')} / ${escapeHTML(actFor(l).title)}</small><b>${unlocked(l)?escapeHTML(l.archive.title):'未归档 · '+escapeHTML(l.name)}</b></button>`).join('');
     const show=index=>{const l=LEVELS[index];$('journal-detail').innerHTML=`<span class="eyebrow">${escapeHTML(l.en)}</span><h3>${escapeHTML(l.archive.title)}</h3><p>${escapeHTML(l.archive.text)}</p><h4>行动之后</h4><p>${escapeHTML(l.outro)}</p><p>${escapeHTML(l.debrief)}</p><h4>通讯回放</h4>${l.transmissions.map(d=>`<p class="journal-radio"><b>${escapeHTML(d.speaker)}</b>${escapeHTML(d.text)}</p>`).join('')}`;document.querySelectorAll('[data-journal]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.journal)===index)));};
@@ -608,16 +626,16 @@
   $('import-save').addEventListener('click',()=>{if(!isActiveBattle())$('save-file').click();});
   $('save-file').addEventListener('change',async()=>{
     const file=$('save-file').files[0];$('save-file').value='';if(!file||isActiveBattle())return;
-    try{if(file.size>1024*1024)throw Error('存档超过 1 MB 限制');const merged=window.DogProgress.importSave(await file.text(),save,LEVELS);localStorage.setItem(SAVE_KEY,JSON.stringify(window.DogProgress.capture(merged,LEVELS)));save=merged;hero=save.hero;level=Math.max(0,LEVELS.findIndex(l=>l.id===save.lastLevelId));activeAct=actFor(LEVELS[level]).key;reducedMotion=systemReducedMotion||save.reducedMotion;document.documentElement.classList.toggle('reduce-motion',reducedMotion);persist();home();updateSoundButton();updateMenu();syncSettings();$('save-status').textContent='导入完成，已合并两种模式的更好成绩。';}catch(error){$('save-status').textContent='未导入：'+error.message;}
+    try{if(file.size>1024*1024)throw Error('存档超过 1 MB 限制');const merged=window.DogProgress.importSave(await file.text(),save,LEVELS);localStorage.setItem(SAVE_KEY,JSON.stringify(window.DogProgress.capture(merged,LEVELS)));save=merged;hero=save.hero;level=Math.max(0,LEVELS.findIndex(l=>l.id===save.lastLevelId));activeAct=actFor(LEVELS[level]).key;reducedMotion=systemReducedMotion||save.reducedMotion;document.documentElement.classList.toggle('reduce-motion',reducedMotion);persist();home();updateSoundButton();updateMenu();syncSettings();$('save-status').textContent='导入完成，已合并三种难度的更好成绩。';}catch(error){$('save-status').textContent='未导入：'+error.message;}
   });
   let desktopState=null;
   const phases={disabled:'尚未连接发行频道',idle:'准备就绪',checking:'正在检查更新',available:'发现新版本',downloading:'正在下载',ready:'新版本已准备好，选择时间重启即可',installing:'正在准备重启安装',current:'当前已是最新版本','not-available':'当前已是最新版本',error:'检查未完成，现有内容仍可游玩'};
   function renderLibrary(){
     const installed=desktopState?.content?.packs||contentPacks.slice(1).map(p=>({id:p.id,title:p.title,version:p.version,levelCount:p.levels.length}));
     $('installed-packs').innerHTML=`<article class="pack-card"><span class="micro">BASE GAME / 本体</span><h3>星海远征</h3><p>${window.DogBuiltin.acts.map(a=>escapeHTML(a.title)).join(' → ')}</p><strong>${window.DogBuiltin.levels.length} 关 · ${window.DogBuiltin.acts.length} 章完整故事</strong><small>v${window.Mochi.APP_VERSION} · 已安装 · 离线可用</small></article>`+installed.map(p=>`<article class="pack-card"><span class="micro">CHAPTER PACK / 扩展章节</span><h3>${escapeHTML(p.title||p.id)}</h3><p>${p.levelCount||p.levels?.length||'新增'} 个行动</p><small>v${escapeHTML(p.version)} · 已安装 · 离线可用</small></article>`).join('');
-    if(!window.dogDesktop){$('app-update-status').textContent='网页版 v1.1.0 · 在线版刷新更新；离线版下载新版 HTML';$('content-update-status').textContent='Mac 版支持独立章节下载与关卡包导入。网页版包含全部 48 关本体。';for(const id of ['auto-update','check-updates','import-pack','open-update-inbox'])$(id).disabled=true;return;}
+    if(!window.dogDesktop){$('app-update-status').textContent='网页版 v1.2.0 · 在线版刷新更新；离线版下载新版 HTML';$('content-update-status').textContent='Mac 版支持独立章节下载与关卡包导入。网页版包含全部 48 关本体。';for(const id of ['auto-update','check-updates','import-pack','open-update-inbox'])$(id).disabled=true;return;}
     const a=desktopState?.app,c=desktopState?.content;
-    $('app-update-status').textContent=a?`v${a.version||'1.1.0'} · ${phases[a.phase]||a.phase||'准备就绪'}${a.availableVersion?' / 新版本 '+a.availableVersion:''}${a.reason?'。'+a.reason:''}${a.phase==='downloading'&&Number.isFinite(a.progress)?' '+Math.round(a.progress)+'%':''}`:'正在读取应用状态…';
+    $('app-update-status').textContent=a?`v${a.version||'1.2.0'} · ${phases[a.phase]||a.phase||'准备就绪'}${a.availableVersion?' / 新版本 '+a.availableVersion:''}${a.reason?'。'+a.reason:''}${a.phase==='downloading'&&Number.isFinite(a.progress)?' '+Math.round(a.progress)+'%':''}`:'正在读取应用状态…';
     $('content-update-status').textContent=c?`${c.error||c.localInbox?.message||c.reason||'已安装章节可离线游玩'}${c.lastCheck?' · 上次检查 '+new Date(c.lastCheck).toLocaleString():''}`:'正在读取关卡库…';
     $('auto-update').checked=desktopState?.preferences?.automaticUpdates!==false;
     $('auto-update').disabled=false;$('open-update-inbox').disabled=false;$('check-updates').disabled=false;$('import-pack').disabled=!!isActiveBattle()||!c?.enabled;
@@ -639,11 +657,11 @@
   sprite.src = window.MOCHI_SPRITES;
   portraitImage.onload=()=>{portraitReady=true;updatePortraits();};portraitImage.src=window.DOG_HERO_PORTRAITS;
   updateSoundButton(); updateMenu();persist();
-  Story?.init({canRead:request=>{if(request.type==='epilogue')return save.storySeen.includes('epilogue')||['normal','assist'].some(mode=>save.records['daybreak-48']?.[mode]?.stars>0);if(request.type==='chapter'&&request.phase==='ending'){const key='chapter:'+request.actId+':ending',last=window.DogBuiltin.levels.filter(l=>l.act===request.actId).at(-1);return save.storySeen.includes(key)||!!last&&['normal','assist'].some(mode=>save.records[last.id]?.[mode]?.stars>0);}return true;},onClose:()=>{}});
+  Story?.init({canRead:request=>{if(request.type==='epilogue')return save.storySeen.includes('epilogue')||['normal','assist','expert'].some(mode=>save.records['daybreak-48']?.[mode]?.stars>0);if(request.type==='chapter'&&request.phase==='ending'){const key='chapter:'+request.actId+':ending',last=window.DogBuiltin.levels.filter(l=>l.act===request.actId).at(-1);return save.storySeen.includes(key)||!!last&&['normal','assist','expert'].some(mode=>save.records[last.id]?.[mode]?.stars>0);}return true;},onClose:()=>{}});
   if(startupWarnings.length)toast(startupWarnings.join(' '),10000);
   if (!storageWorks) $('save-note').textContent = '浏览器未允许保存，仍可正常游玩';
   if (matchMedia('(pointer: coarse)').matches) { $('move-hint').textContent = '按住相对拖动 · 点箭头冲刺 · 点按支援'; document.querySelector('.lobby-bottom p').textContent = '相对拖动移动 · 按钮释放技能'; }
   // Read-only diagnostics are useful for reproducible browser verification.
-  Object.defineProperty(window, 'mochiDebug', { value: Object.freeze({ snapshot: () => game ? game.snapshot() : { phase: 'lobby', level, levelId:LEVELS[level].id, levelCount:LEVELS.length, hero, easy: save.easy }, assetsReady: () => artLoaded&&enemyReady&&bossReady, audio:()=>audio.diagnostics(), rendering:()=>({width:canvas.width,height:canvas.height,scale:renderScale,dpr:devicePixelRatio,celebrating:victoryStarted!==null&&!resultShown,recorded:resultRecorded,nativeResultPending}), savedProgress: () => JSON.parse(JSON.stringify(save)) }) });
+  Object.defineProperty(window, 'mochiDebug', { value: Object.freeze({ snapshot: () => game ? game.snapshot() : { phase: 'lobby', level, levelId:LEVELS[level].id, levelCount:LEVELS.length, hero, easy: save.easy, difficultyMode:save.difficultyMode }, assetsReady: () => artLoaded&&enemyReady&&bossReady, audio:()=>audio.diagnostics(), rendering:()=>({width:canvas.width,height:canvas.height,scale:renderScale,dpr:devicePixelRatio,celebrating:victoryStarted!==null&&!resultShown,recorded:resultRecorded,nativeResultPending}), savedProgress: () => JSON.parse(JSON.stringify(save)) }) });
   requestAnimationFrame(frame);
 })().catch(error=>{console.error(error);const message=document.createElement('p');message.className='startup-error';message.textContent='游戏未能载入，请重新打开完整安装版本。'+error.message;document.body.prepend(message);});

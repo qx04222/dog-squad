@@ -13,7 +13,7 @@ test('public 1.0 preserves legacy 6.0 scores, builds and stable save format', ()
   assert.equal(save.best[23], 12800);
   assert.equal(save.loadout, 7);
   assert.deepEqual(save.storySeen, []);
-  assert.deepEqual(Progress.normalize(Progress.capture(save, levels), levels).records['daybreak-24'], original.records['daybreak-24']);
+  assert.deepEqual(Progress.normalize(Progress.capture(save, levels), levels).records['daybreak-24'], { ...original.records['daybreak-24'], expert: { stars: 0, best: 0, medals: 0 } });
 });
 
 test('story reading survives local save and merge without deleting existing chapters', () => {

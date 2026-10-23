@@ -42,7 +42,7 @@ test('shooting four times turns a negative gate upward by one', () => {
   g.step(1 / 60); assert.equal(g.state.entities[0].value, 0);
 });
 test('multiplication gates cap the team and cannot kill it with an overflow', () => {
-  const g = createGame(); g.state.team = 150;
+  const g = createGame(); g.state.team = 250;
   g.state.entities = [{ id: 1, type: 'gate', group: 1, x: 170, y: PLAYER_Y - 25, width: 186, value: 3, op: 'multiply', charge: 0, hit: 0, used: false }];
   g.step(1 / 60); assert.equal(g.state.team, MAX_TEAM); assert.equal(g.state.peakTeam, MAX_TEAM);
 });
@@ -90,7 +90,7 @@ test('legacy achievements stay separate while captain and sound preferences surv
   assert.deepEqual(s.stars,Array(LEVELS.length).fill(0));assert.deepEqual(s.best,Array(LEVELS.length).fill(0));assert.equal(s.hero,1);assert.equal(s.sound,false);assert.equal(s.easy,false);
 });
 test('forty-eight operations have complete routes and generous caps',()=>{
-  assert.equal(LEVELS.length,48);assert.equal(MAX_TEAM,300);assert.equal(MAX_WEAPON,8);
+  assert.equal(LEVELS.length,48);assert.equal(MAX_TEAM,600);assert.equal(MAX_WEAPON,8);
   assert.ok(LEVELS.every(l=>l.duration>=65));assert.equal(LEVELS[7].duration,93);
 });
 test('mode scores are sanitized independently',()=>{
@@ -111,7 +111,7 @@ test('twelve kills trigger overdrive; one target cannot count twice',()=>{
 test('boss phase transition schedules telegraphed beams; skill clears threats',()=>{
   const g=createGame({level:7});g.state.team=300;g.state.bossSpawned=true;
   g.state.boss={x:300,y:145,hp:4000,maxHp:10000,stage:1,clock:0,shot:2,beam:4,summon:8,volleys:0,hit:0};
-  g.step(1/60);assert.equal(g.state.boss.stage,2);advance(g,.85,{x:170});assert.equal(g.state.hazards.length,2);assert.ok(g.state.hazards.every(h=>h.delay>0));
+  g.step(1/60);assert.equal(g.state.boss.stage,2);advance(g,.95,{x:170});assert.equal(g.state.hazards.length,2);assert.ok(g.state.hazards.every(h=>h.delay>0));
   g.skill();assert.equal(g.state.hazards.length,0);assert.equal(g.state.bullets.filter(b=>!b.friendly).length,0);
 });
 test('beam warns before damage, hits once, and cannot act during pause',()=>{
@@ -121,8 +121,8 @@ test('beam warns before damage, hits once, and cannot act during pause',()=>{
 test('weapon upgrades stop at level eight',()=>{
   const g=createGame();g.state.weapon=8;g.state.entities=[{id:1,type:'crate',x:170,y:300,hp:1,maxHp:1,r:35,hit:0}];g.state.bullets=[{x:170,y:310,vy:-650,damage:9,r:5,friendly:true}];g.step(1/60);assert.equal(g.state.weapon,8);
 });
-test('tactical movement and support outperform reckless chasing on the final chapter',()=>{
-  const careful=createGame({level:7}), reckless=createGame({level:7});advance(careful,210,pilot);advance(reckless,210,g=>greedy(g.state));
+test('tactical movement and support outperform reckless chasing on challenge difficulty',()=>{
+  const careful=createGame({level:7,difficultyMode:'expert'}), reckless=createGame({level:7,difficultyMode:'expert'});advance(careful,210,pilot);advance(reckless,210,g=>greedy(g.state));
   assert.equal(careful.state.phase,'won');assert.equal(reckless.state.phase,'lost');assert.ok(careful.state.team>0);
 });
 test('long final battle keeps transient render objects bounded',()=>{

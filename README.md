@@ -1,7 +1,7 @@
 <p align="center"><img src="assets/icon.png" width="92" alt="狗狗突击队图标"></p>
 <h1 align="center">狗狗突击队 · DOG SQUAD</h1>
 <p align="center"><strong>每一声呼叫，都值得一个回答。</strong><br>Ramen 与 Bing Bong 的六章科幻救援冒险。</p>
-<p align="center"><a href="https://qx04222.github.io/dog-squad/">游戏官网</a> · <a href="https://qx04222.github.io/dog-squad/play/">直接游玩</a> · <a href="https://github.com/qx04222/dog-squad/releases/tag/v1.1.0">下载 1.1</a> · <a href="docs/STORY.md">故事设定</a></p>
+<p align="center"><a href="https://qx04222.github.io/dog-squad/">游戏官网</a> · <a href="https://qx04222.github.io/dog-squad/play/">直接游玩</a> · <a href="https://github.com/qx04222/dog-squad/releases/tag/v1.2.0">下载 1.2</a> · <a href="docs/STORY.md">故事设定</a></p>
 
 ![Ramen 与 Bing Bong 穿越天空之城的原创宣传插画](assets/hero-cute.jpg)
 
@@ -16,8 +16,8 @@
 | 版本 | 入口 | 要求 |
 | --- | --- | --- |
 | 浏览器 | [在线游玩](https://qx04222.github.io/dog-squad/play/) | 现代浏览器，键盘或触控/鼠标 |
-| Mac | [下载 DMG](https://github.com/qx04222/dog-squad/releases/download/v1.1.0/Dog-Squad-1.1.0-arm64.dmg) | Apple Silicon，macOS 13 或更新 |
-| 离线网页 | [下载 Web ZIP](https://github.com/qx04222/dog-squad/releases/download/v1.1.0/Dog-Squad-1.1.0-Web.zip) | 解压后打开 HTML，无需服务器 |
+| Mac | [下载 DMG](https://github.com/qx04222/dog-squad/releases/download/v1.2.0/Dog-Squad-1.2.0-arm64.dmg) | Apple Silicon，macOS 13 或更新 |
+| 离线网页 | [下载 Web ZIP](https://github.com/qx04222/dog-squad/releases/download/v1.2.0/Dog-Squad-1.2.0-Web.zip) | 解压后打开 HTML，无需服务器 |
 
 Mac：打开 DMG，把 **Dog Squad** 拖进“应用程序”，再从应用程序启动。本版本使用 ad-hoc 签名，尚无 Apple Developer ID 公证；macOS 可能要求在“系统设置 → 隐私与安全性”中确认打开。不会要求关闭系统安全设置。Intel Mac 原生包尚未提供，可使用网页版。
 
@@ -28,7 +28,7 @@ Mac：打开 DMG，把 **Dog Squad** 拖进“应用程序”，再从应用程�
 - **越危险，越有机会。** 冲刺穿过敌弹触发完美闪避，补充护盾与终极能量；180ms 技能输入缓冲让关键操作更顺手。
 - **会变化的战场。** 护盾、修复、快攻、交叉火力与多阶段 Boss；七种战场芯片、连击过载和三项战术评级。
 - **一场完整远征。** 六座插画岛屿、48 个地图节点。开场用一张明信片讲故事，结算用真实星级留下战绩；完整故事随时按需展开。
-- **保留你的旅程。** 自动本地存档、导出/导入与原生双份备份；标准与辅助模式分别记录成绩。
+- **保留你的旅程。** 自动本地存档、导出/导入与原生双份备份；轻松、标准、挑战三档分别记录成绩；旧成绩完整保留。
 
 ![六章远征世界地图插画](assets/world-cute.jpg)
 
@@ -68,9 +68,9 @@ npm run pack:mac   # 在 Apple Silicon Mac 上生成 DMG + ZIP
 
 ## 更新与版本
 
-**当前版本为 1.1.0**，采用新的可爱插画界面。1.0.0 是首个公开版本，开发时期的 6.0 不代表更新的公开发行版。存档格式、关卡 ID 与原生应用标识保持不变；显示版本和关卡兼容能力独立维护。
+**当前版本为 1.2.0**，增加三档难度、600人上限，并修复结算星级与图文布局。1.0.0 是首个公开版本，开发时期的 6.0 不代表更新的公开发行版。存档格式、关卡 ID 与原生应用标识保持不变；显示版本和关卡兼容能力独立维护。
 
-Mac 更新器检查签名清单、下载并验证安装包，准备好后由玩家选择重启安装；战斗中不能安装。独立章节包使用另一组签名验证。私钥不在源码或应用里。旧的 6.0 本地安装包需要手动安装一次 1.1，之后使用新的更新通道。签名与发布步骤见 [发行指南](docs/RELEASING.md)。
+Mac 更新器检查签名清单、下载并验证安装包，准备好后由玩家选择重启安装；战斗中不能安装。独立章节包使用另一组签名验证。私钥不在源码或应用里。旧的 6.0 本地安装包需要手动安装一次 1.2，之后使用新的更新通道。签名与发布步骤见 [发行指南](docs/RELEASING.md)。 更新后请保留新版：1.1 及更早版本无法识别新增挑战成绩，手动降级后保存可能丢失这部分记录。
 
 浏览器存档属于当前浏览器来源，Mac 存档属于本机用户目录；二者之间可在游戏设置中导出/导入 JSON。卸载章节不会删除已获得的成绩。
 
@@ -86,6 +86,6 @@ scripts/   构建、打包与发行工具
 tests/     游戏规则、内容、安全、存档回归
 ```
 
-欢迎提交具体问题和小范围改进，见 [贡献指南](CONTRIBUTING.md)。涉及更新器、包解析或文件访问的安全问题请先阅读 [安全说明](SECURITY.md)。设计与验收路线见 [1.1 视觉升级](docs/V1.1-VISUAL-PLAN.md)。
+欢迎提交具体问题和小范围改进，见 [贡献指南](CONTRIBUTING.md)。涉及更新器、包解析或文件访问的安全问题请先阅读 [安全说明](SECURITY.md)。设计与验收路线见 [1.2 打磨计划](docs/V1.2-POLISH-PLAN.md)。
 
 代码使用 [MIT](LICENSE)；美术与故事内容按 [CC BY 4.0](LICENSE-ASSETS.md) 提供，来源说明见 [素材记录](assets/PROVENANCE.md)。美术包含 AI 辅助生成，音乐和音效由项目代码合成。第三方依赖仍遵循其各自许可证，见 [第三方说明](THIRD_PARTY_NOTICES.md)。
